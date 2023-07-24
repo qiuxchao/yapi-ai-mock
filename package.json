@@ -4,14 +4,16 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"build": "tsc"
+		"build": "rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"consola": "^3.2.3",
 		"mockjs": "^1.1.0",
-		"node-fetch": "^3.3.1"
+		"node-fetch": "^3.3.1",
+		"ora": "3.4.0"
 	},
 	"devDependencies": {
 		"typescript": "^5.1.6"
