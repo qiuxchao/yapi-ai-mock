@@ -2,20 +2,34 @@
 	"name": "yapi-mockjs-gpt",
 	"version": "1.0.0",
 	"description": "",
-	"main": "index.js",
+	"type": "module",
+	"main": "./lib/index.cjs",
+	"types": "./lib/index.d.ts",
+	"files": [
+		"lib"
+	],
 	"scripts": {
-		"build": "rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript"
+		"build": "unbuild"
+	},
+	"exports": {
+		".": {
+			"import": "./lib/index.mjs",
+			"require": "./lib/index.cjs"
+		}
 	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",
+	"peerDependencies": {
+		"mockjs": "^1.1.0"
+	},
 	"dependencies": {
 		"consola": "^3.2.3",
-		"mockjs": "^1.1.0",
 		"node-fetch": "^3.3.1",
 		"ora": "3.4.0"
 	},
 	"devDependencies": {
-		"typescript": "^5.1.6"
+		"typescript": "^5.1.6",
+		"unbuild": "^1.2.1"
 	}
 }

@@ -17,4 +17,7 @@ const spinner = ora('Loading unicorns').start();
 setTimeout(() => {
 	spinner.color = 'yellow';
 	spinner.text = 'Loading rainbows';
+	spinner.clear();
 }, 1000);
+
+console.log(a);
