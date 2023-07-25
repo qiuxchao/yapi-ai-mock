@@ -1,7 +1,12 @@
 {
 	"name": "yapi-mockjs-gpt",
 	"version": "1.0.0",
-	"description": "",
+	"description": "利用GPT技术，将API文档生成为本地的Mock文件",
+	"keywords": [
+		"yapi",
+		"codegen",
+		"gpt"
+	],
 	"type": "module",
 	"main": "./lib/index.cjs",
 	"types": "./lib/index.d.ts",
@@ -17,7 +22,6 @@
 			"require": "./lib/index.cjs"
 		}
 	},
-	"keywords": [],
 	"author": "",
 	"license": "ISC",
 	"peerDependencies": {
