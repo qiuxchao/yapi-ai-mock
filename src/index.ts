@@ -1,6 +1,7 @@
 import { a } from './a';
 import ora from 'ora';
 import consola from 'consola';
+export * from './types';
 
 consola.info('Using consola 3.0.0');
 consola.start('Building project...');
