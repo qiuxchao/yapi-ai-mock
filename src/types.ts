@@ -1,7 +1,4 @@
-export type OmitStrict<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-export type LiteralUnion<LiteralType, BaseType extends any> = LiteralType | (BaseType & { _?: never });
-export type OneOrMore<T> = T | T[];
-
+import { OmitStrict, LiteralUnion, OneOrMore, AsyncOrSync } from 'vtils/types';
 export interface ChangeCase {
 	/**
 	 * @example
@@ -480,7 +477,7 @@ export interface MockConfig {
 	outputFilePath?: string | ((interfaceInfo: Interface, changeCase: ChangeCase) => string);
 }
 
-export interface Config extends SharedConfig {
+export interface ServerConfig extends SharedConfig {
 	/**
 	 * 是否优先从 `env` 中获取服务地址。此选项会从 `process.env` 中的 `YAPI_SERVER_URL` 字段获取服务地址。
 	 */
@@ -508,4 +505,19 @@ export interface Config extends SharedConfig {
 	 */
 }
 
-export const defineConfig = (config: Config): Config => config;
+/** 命令行钩子 */
+export interface CliHooks {
+	/** 生成成功时触发 */
+	success?: () => AsyncOrSync<void>;
+	/** 生成失败时触发 */
+	fail?: () => AsyncOrSync<void>;
+	/** 生成完毕时触发（无论成功、失败） */
+	complete?: () => AsyncOrSync<void>;
+}
+
+export type ConfigWithHooks = Config & {
+	hooks?: CliHooks;
+};
+
+/** 配置。 */
+export type Config = ServerConfig | ServerConfig[];

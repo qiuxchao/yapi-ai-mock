@@ -1,5 +1,5 @@
 {
-	"name": "yapi-mockjs-gpt",
+	"name": "yapi-to-mockjs",
 	"version": "1.0.0",
 	"description": "利用GPT技术，将API文档生成为本地的Mock文件",
 	"keywords": [
@@ -28,11 +28,21 @@
 		"mockjs": "^1.1.0"
 	},
 	"dependencies": {
+		"change-case": "^4.1.2",
 		"consola": "^3.2.3",
+		"dayjs": "^1.11.9",
+		"fs-extra": "^11.1.1",
 		"node-fetch": "^3.3.1",
-		"ora": "3.4.0"
+		"ora": "3.4.0",
+		"prettier": "^3.0.0",
+		"ts-node": "^10.9.1",
+		"vtils": "^4.85.3",
+		"yargs": "^16.2.0"
 	},
 	"devDependencies": {
+		"@types/fs-extra": "^11.0.1",
+		"@types/node": "^20.4.5",
+		"@types/yargs": "^16.0.1",
 		"typescript": "^5.1.6",
 		"unbuild": "^1.2.1"
 	}
