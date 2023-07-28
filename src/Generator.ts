@@ -16,7 +16,17 @@ export class Generator {
 		this.config = castArray(config);
 	}
 
-	async prepare(): Promise<void> {}
+	async prepare(): Promise<void> {
+		this.config = await Promise.all(
+			// config 可能是对象或数组，统一为数组
+			this.config.map(async (item) => {
+				if (item.serverUrl) {
+					item.serverUrl = item.serverUrl.replace(/\/+$/, '');
+				}
+				return item;
+			})
+		);
+	}
 	async generate(): Promise<void> {}
 	async write(outputFileList: any) {}
 	async destroy(): Promise<void> {}

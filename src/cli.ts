@@ -73,8 +73,8 @@ export async function run(
 
 	if (!options?.configFile) {
 		cwd = process.cwd();
-		configTSFile = path.join(cwd, 'gugu.config.ts');
-		configJSFile = path.join(cwd, 'gugu.config.js');
+		configTSFile = path.join(cwd, 'ytm.config.ts');
+		configJSFile = path.join(cwd, 'ytm.config.js');
 		const configTSFileExist = await fs.pathExists(configTSFile);
 		const configJSFileExist = !configTSFileExist && (await fs.pathExists(configJSFile));
 		configFileExist = configTSFileExist || configJSFileExist;

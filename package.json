@@ -13,6 +13,9 @@
 	"files": [
 		"lib"
 	],
+	"bin": {
+		"ytm": "./lib/cli.cjs"
+	},
 	"scripts": {
 		"build": "unbuild"
 	},
