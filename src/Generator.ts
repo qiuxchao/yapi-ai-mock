@@ -29,5 +29,7 @@ export class Generator {
 	}
 	async generate(): Promise<void> {}
 	async write(outputFileList: any) {}
-	async destroy(): Promise<void> {}
+	async destroy() {
+		return Promise.all(this.disposes.map(async (dispose) => dispose()));
+	}
 }
