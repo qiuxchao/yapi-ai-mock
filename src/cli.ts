@@ -47,11 +47,9 @@ export default async function ytm(config: ConfigWithHooks) {
 
 		await generator.write(output);
 		consola.success('写入文件完毕');
-		await generator.destroy();
 		await config!.hooks?.success?.();
 	} catch (err) {
 		spinner?.stop();
-		await generator?.destroy();
 		await config?.hooks?.fail?.();
 		consola.error(err);
 	}

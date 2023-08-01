@@ -13,8 +13,6 @@ export class Generator {
 	/** 配置 */
 	private config: ServerConfig[] = [];
 
-	private disposes: Array<() => any> = [];
-
 	constructor(
 		config: Config,
 		private options: { cwd: string } = { cwd: process.cwd() }
@@ -39,7 +37,4 @@ export class Generator {
 	/** 生成 mock 配置，返回 */
 	async generate(): Promise<void> {}
 	async write(outputFileList: any) {}
-	async destroy() {
-		return Promise.all(this.disposes.map(async (dispose) => dispose()));
-	}
 }
