@@ -77,6 +77,8 @@ interface ChangeCase {
      */
     upperCaseFirst: (value: string) => string;
 }
+/** 混合的配置。 */
+type SyntheticalConfig = Partial<ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]>;
 /** 请求方式 */
 declare enum Method {
     GET = "GET",
@@ -477,4 +479,4 @@ type ConfigWithHooks = Config & {
 /** 配置。 */
 type Config = ServerConfig | ServerConfig[];
 
-export { Config as C, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SharedConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CommentConfig as k, CategoryConfig as l, ProjectConfig as m, MockConfig as n, ServerConfig as o };
+export { Config as C, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CommentConfig as k, SharedConfig as l, CategoryConfig as m, ProjectConfig as n, MockConfig as o, ServerConfig as p };

@@ -77,6 +77,11 @@ export interface ChangeCase {
 	upperCaseFirst: (value: string) => string;
 }
 
+/** 混合的配置。 */
+export type SyntheticalConfig = Partial<
+	ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
+>;
+
 /** 请求方式 */
 export enum Method {
 	GET = 'GET',

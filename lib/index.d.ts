@@ -1,5 +1,5 @@
-import { C as Config, a as CliHooks, b as ConfigWithHooks } from './types-12d5a0e6.js';
-export { j as Category, l as CategoryConfig, c as ChangeCase, k as CommentConfig, G as GptConfig, I as Interface, i as InterfaceList, M as Method, n as MockConfig, P as Project, m as ProjectConfig, R as RequestBodyType, f as RequestFormItemType, d as RequestParamType, e as RequestQueryType, h as Required, g as ResponseBodyType, o as ServerConfig, S as SharedConfig } from './types-12d5a0e6.js';
+import { C as Config, a as CliHooks, b as ConfigWithHooks } from './types-5d5ddce2.js';
+export { j as Category, m as CategoryConfig, c as ChangeCase, k as CommentConfig, G as GptConfig, I as Interface, i as InterfaceList, M as Method, o as MockConfig, P as Project, n as ProjectConfig, R as RequestBodyType, f as RequestFormItemType, d as RequestParamType, e as RequestQueryType, h as Required, g as ResponseBodyType, p as ServerConfig, l as SharedConfig, S as SyntheticalConfig } from './types-5d5ddce2.js';
 import 'vtils/types';
 
 /**
