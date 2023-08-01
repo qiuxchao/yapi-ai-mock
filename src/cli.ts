@@ -91,11 +91,13 @@ export async function run(
 	}
 	consola.success(`找到配置文件: ${configFile}`);
 	const config: ConfigWithHooks = require(configFile).default;
+	console.log(config);
 	await ytm(config);
 }
 
 if (require.main === module) {
 	const argv = yargs(process.argv).alias('c', 'config').argv;
+	// 指定配置文件运行：ytm -c|-config=配置文件路径
 	run(argv._[2] as any, {
 		configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
 	});
