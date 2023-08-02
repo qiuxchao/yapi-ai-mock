@@ -277,6 +277,9 @@ export interface Category {
 	up_time: number;
 }
 
+/** 分类列表，对应数据导出的 json 内容 */
+export type CategoryList = Category[];
+
 /** 项目信息 */
 export interface Project {
 	/** ID */

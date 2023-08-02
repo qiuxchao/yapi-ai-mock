@@ -260,6 +260,8 @@ interface Category {
     /** 更新时间（unix时间戳） */
     up_time: number;
 }
+/** 分类列表，对应数据导出的 json 内容 */
+type CategoryList = Category[];
 /** 项目信息 */
 interface Project {
     /** ID */
@@ -479,4 +481,4 @@ type ConfigWithHooks = Config & {
 /** 配置。 */
 type Config = ServerConfig | ServerConfig[];
 
-export { Config as C, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CommentConfig as k, SharedConfig as l, CategoryConfig as m, ProjectConfig as n, MockConfig as o, ServerConfig as p };
+export { Config as C, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CategoryList as k, CommentConfig as l, SharedConfig as m, CategoryConfig as n, ProjectConfig as o, MockConfig as p, ServerConfig as q };
