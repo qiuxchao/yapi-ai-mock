@@ -1,3 +1,4 @@
+import { ParsedPath } from 'path';
 import { OmitStrict, LiteralUnion, OneOrMore, AsyncOrSync } from 'vtils/types';
 
 interface ChangeCase {
@@ -144,6 +145,10 @@ declare enum Required {
     false = "0",
     /** 必需 */
     true = "1"
+}
+/** 扩展接口定义 */
+interface ExtendedInterface extends Interface {
+    parsedPath: ParsedPath;
 }
 /** 接口定义 */
 interface Interface {
@@ -328,6 +333,25 @@ interface CommentConfig {
      * @default true
      */
     link?: boolean;
+    /**
+     * 额外的注释标签。生成的内容形如：`@{name} {value}`。
+     */
+    extraTags?: (interfaceInfo: ExtendedInterface) => Array<{
+        /**
+         * 标签名。
+         */
+        name: string;
+        /**
+         * 标签值。
+         */
+        value: string;
+        /**
+         * 标签位置，即将新标签插在标签列表的开头还是末尾。
+         *
+         * @default 'end'
+         */
+        position?: 'start' | 'end';
+    }>;
 }
 /**
  * 共享的配置。
@@ -352,6 +376,77 @@ interface SharedConfig {
      * 支持生成注释的相关配置。
      */
     comment?: CommentConfig;
+    /**
+     * 预处理接口信息，返回新的接口信息。可返回 false 排除当前接口。
+     *
+     * 譬如你想对接口的 `path` 进行某些处理或者想排除某些接口，就可使用该方法。
+     *
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @param syntheticalConfig 作用到当前接口的最终配置
+     * @example
+     *
+     * ```js
+     * interfaceInfo => {
+     *   interfaceInfo.path = interfaceInfo.path.replace('v1', 'v2')
+     *   return interfaceInfo
+     * }
+     * ```
+     */
+    preproccessInterface?(interfaceInfo: Interface, changeCase: ChangeCase, syntheticalConfig: SyntheticalConfig): Interface | false;
+    /**
+     * 设置传给请求函数的参数中的 extraInfo 的值。
+     *
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @returns 返回要赋给 extraInfo 的值
+     */
+    setRequestFunctionExtraInfo?(interfaceInfo: Interface, changeCase: ChangeCase): Record<string, any>;
+    /**
+     * 预处理接口信息，返回新的接口信息。可返回 false 排除当前接口。
+     *
+     * 譬如你想对接口的 `path` 进行某些处理或者想排除某些接口，就可使用该方法。
+     *
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @param syntheticalConfig 作用到当前接口的最终配置
+     * @example
+     *
+     * ```js
+     * interfaceInfo => {
+     *   interfaceInfo.path = interfaceInfo.path.replace('v1', 'v2')
+     *   return interfaceInfo
+     * }
+     * ```
+     */
+    preproccessInterface?(interfaceInfo: Interface, changeCase: ChangeCase, syntheticalConfig: SyntheticalConfig): Interface | false;
+    /**
+     * 获取请求函数的名称。
+     *
+     * @default changeCase.camelCase(interfaceInfo.parsedPath.name)
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @returns 请求函数的名称
+     */
+    getRequestFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
+    /**
+     * 获取请求数据类型的名称。
+     *
+     * @default changeCase.pascalCase(`${requestFunctionName}Request`)
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @returns 请求数据类型的名称
+     */
+    getRequestDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
+    /**
+     * 获取响应数据类型的名称。
+     *
+     * @default changeCase.pascalCase(`${requestFunctionName}Response`)
+     * @param interfaceInfo 接口信息
+     * @param changeCase 常用的大小写转换函数集合对象
+     * @returns 响应数据类型的名称
+     */
+    getResponseDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
 }
 /**
  * 分类的配置。
@@ -481,4 +576,4 @@ type ConfigWithHooks = Config & {
 /** 配置。 */
 type Config = ServerConfig | ServerConfig[];
 
-export { Config as C, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CategoryList as k, CommentConfig as l, SharedConfig as m, CategoryConfig as n, ProjectConfig as o, MockConfig as p, ServerConfig as q };
+export { Config as C, ExtendedInterface as E, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CategoryList as k, CommentConfig as l, SharedConfig as m, CategoryConfig as n, ProjectConfig as o, MockConfig as p, ServerConfig as q };

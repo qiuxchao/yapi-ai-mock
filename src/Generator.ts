@@ -1,9 +1,13 @@
-import { castArray, cloneDeepFast, isEmpty, isFunction, memoize, omit, uniq } from 'vtils';
+import { castArray, cloneDeepFast, dedent, groupBy, isEmpty, isFunction, last, memoize, omit, uniq } from 'vtils';
+import * as changeCase from 'change-case';
 import {
 	Category,
 	CategoryConfig,
 	CategoryList,
+	CommentConfig,
 	Config,
+	ExtendedInterface,
+	Interface,
 	InterfaceList,
 	Project,
 	ProjectConfig,
@@ -11,6 +15,9 @@ import {
 	SyntheticalConfig,
 } from './types';
 import { httpGet, throwError } from './utils';
+import { writeFileSync } from 'fs';
+import path from 'path';
+import dayjs from 'dayjs';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -60,12 +67,14 @@ export class Generator {
 					);
 					return projects;
 				}, []);
+				console.log('projects: ', projects);
 				return Promise.all(
 					projects.map(async (projectConfig, projectIndex) => {
 						const projectInfo = await this.fetchProjectInfo({
 							...serverConfig,
 							...projectConfig,
 						});
+						console.log('projectInfo: ', projectInfo);
 						await Promise.all(
 							projectConfig.categories.map(async (categoryConfig, categoryIndex) => {
 								// 分类处理
@@ -84,6 +93,7 @@ export class Generator {
 								categoryIds = categoryIds.filter((id) => !!projectInfo.cats.find((cat) => cat._id === id));
 								// 顺序化
 								categoryIds = categoryIds.sort();
+								console.log('categoryIds: ', categoryIds);
 
 								const codes = (
 									await Promise.all(
@@ -109,118 +119,116 @@ export class Generator {
 
 											// 接口列表
 											let interfaceList = await this.fetchInterfaceList(syntheticalConfig);
-											categoryIndex2 === 0 && console.log(syntheticalConfig, interfaceList);
-											return interfaceList;
 
-											// interfaceList = interfaceList
-											// 	.map((interfaceInfo) => {
-											// 		// 实现 _project 字段
-											// 		interfaceInfo._project = omit(projectInfo, ['cats', 'getMockUrl', 'getDevUrl', 'getProdUrl']);
-											// 		// 预处理
-											// 		const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
-											// 			? syntheticalConfig.preproccessInterface(
-											// 					cloneDeepFast(interfaceInfo),
-											// 					changeCase,
-											// 					syntheticalConfig
-											// 			  )
-											// 			: interfaceInfo;
+											interfaceList = interfaceList
+												.map((interfaceInfo) => {
+													// 实现 _project 字段
+													interfaceInfo._project = omit(projectInfo, ['cats']);
+													// 预处理
+													const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
+														? syntheticalConfig.preproccessInterface(
+																cloneDeepFast(interfaceInfo),
+																changeCase,
+																syntheticalConfig
+														  )
+														: interfaceInfo;
 
-											// 		return _interfaceInfo;
-											// 	})
-											// 	.filter(Boolean) as any;
-											// interfaceList.sort((a, b) => a._id - b._id);
+													return _interfaceInfo;
+												})
+												.filter(Boolean) as any;
+											interfaceList.sort((a, b) => a._id - b._id);
 
-											// const interfaceCodes = await Promise.all(
-											// 	interfaceList.map<
-											// 		Promise<{
-											// 			categoryUID: string;
-											// 			outputFilePath: string;
-											// 			weights: number[];
-											// 			code: string;
-											// 			type: 'fn' | 'type';
-											// 		}>
-											// 	>(async (interfaceInfo) => {
-											// 		const outputFilePath = path.resolve(
-											// 			this.options.cwd,
-											// 			typeof syntheticalConfig.outputFilePath === 'function'
-											// 				? syntheticalConfig.outputFilePath(interfaceInfo, changeCase)
-											// 				: syntheticalConfig.outputFilePath!
-											// 		);
-											// 		const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
+											const interfaceCodes = await Promise.all(
+												interfaceList.map<
+													Promise<{
+														categoryUID: string;
+														outputFilePath: string;
+														weights: number[];
+														code: string;
+														type: 'fn' | 'type';
+													}>
+												>(async (interfaceInfo) => {
+													const outputFilePath = path.resolve(
+														this.options.cwd,
+														typeof syntheticalConfig.outputFilePath === 'function'
+															? syntheticalConfig.outputFilePath(interfaceInfo, changeCase)
+															: syntheticalConfig.outputFilePath!
+													);
+													const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
 
-											// 		const { typeCode: code, fetchConstruction } = await this.generateInterfaceCode(
-											// 			syntheticalConfig,
-											// 			interfaceInfo
-											// 			// categoryUID,
-											// 		);
-											// 		const weights: number[] = [serverIndex, projectIndex, categoryIndex, categoryIndex2];
-											// 		return {
-											// 			categoryUID,
-											// 			outputFilePath,
-											// 			weights,
-											// 			code,
-											// 			fetchConstruction,
-											// 			type: 'type',
-											// 		};
-											// 	})
-											// );
+													const { typeCode: code, fetchConstruction } = await this.generateInterfaceCode(
+														syntheticalConfig,
+														interfaceInfo
+														// categoryUID,
+													);
+													const weights: number[] = [serverIndex, projectIndex, categoryIndex, categoryIndex2];
+													return {
+														categoryUID,
+														outputFilePath,
+														weights,
+														code,
+														fetchConstruction,
+														type: 'type',
+													};
+												})
+											);
 											//  这就是 分类
 											// --
 
 											// { categoryUID: string; outputFilePath: string; weights: number[]; code: string; }
-											// const fetchFunctions = interfaceCodes.map((e: any) => ({
-											// 	...e,
-											// 	type: 'fn',
-											// 	outputFilePath: e.outputFilePath,
-											// 	code: (syntheticalConfig.requestStatement
-											// 		? syntheticalConfig.requestStatement(e.fetchConstruction)
-											// 		: '') as any,
-											// }));
+											const fetchFunctions = interfaceCodes.map((e: any) => ({
+												...e,
+												type: 'fn',
+												outputFilePath: e.outputFilePath,
+												code: (syntheticalConfig.requestStatement
+													? syntheticalConfig.requestStatement(e.fetchConstruction)
+													: '') as any,
+											}));
 
-											// const groupedInterfaceCodes = groupBy(
-											// 	interfaceCodes
-											// 		.map((e: any) => {
-											// 			e.outputFilePath = e.outputFilePath.replace(/\w+\.ts$/, 'typings.d.ts');
-											// 			e.type = 'type';
-											// 			return e;
-											// 		})
-											// 		.concat(fetchFunctions),
-											// 	(item) => item.outputFilePath
-											// );
+											const groupedInterfaceCodes = groupBy(
+												interfaceCodes
+													.map((e: any) => {
+														e.outputFilePath = e.outputFilePath.replace(/\w+\.ts$/, 'typings.d.ts');
+														e.type = 'type';
+														return e;
+													})
+													.concat(fetchFunctions),
+												(item) => item.outputFilePath
+											);
 
-											// return Object.keys(groupedInterfaceCodes).map((outputFilePath) => {
-											// 	const data = groupedInterfaceCodes[outputFilePath];
-											// 	const categoryCode = [...sortByWeights(data).map((item) => item.code)]
-											// 		.filter(Boolean)
-											// 		.join('\n\n');
+											return Object.keys(groupedInterfaceCodes).map((outputFilePath) => {
+												const data = groupedInterfaceCodes[outputFilePath];
+												const categoryCode = [...sortByWeights(data).map((item) => item.code)]
+													.filter(Boolean)
+													.join('\n\n');
 
-											// 	const type = data[0].type;
-											// 	if (!outputFileList[outputFilePath]) {
-											// 		outputFileList[outputFilePath] = {
-											// 			syntheticalConfig,
-											// 			content: [],
-											// 			type: type,
-											// 			requestFunctionFilePath: syntheticalConfig.requestFunctionFilePath
-											// 				? path.resolve(this.options.cwd, syntheticalConfig.requestFunctionFilePath)
-											// 				: path.join(path.dirname(outputFilePath), 'request.ts'),
-											// 			requestHookMakerFilePath:
-											// 				syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
-											// 					? syntheticalConfig.reactHooks.requestHookMakerFilePath
-											// 						? path.resolve(
-											// 								this.options.cwd,
-											// 								syntheticalConfig.reactHooks.requestHookMakerFilePath
-											// 						  )
-											// 						: path.join(path.dirname(outputFilePath), 'makeRequestHook.ts')
-											// 					: '',
-											// 		};
-											// 	}
-											// 	return {
-											// 		type: type,
-											// 		outputFilePath: outputFilePath,
-											// 		code: categoryCode,
-											// 		weights: last(sortByWeights(groupedInterfaceCodes[outputFilePath]))!.weights,
-											// 	};
-											// });
+												const type = data[0].type;
+												if (!outputFileList[outputFilePath]) {
+													outputFileList[outputFilePath] = {
+														syntheticalConfig,
+														content: [],
+														type: type,
+														requestFunctionFilePath: syntheticalConfig.requestFunctionFilePath
+															? path.resolve(this.options.cwd, syntheticalConfig.requestFunctionFilePath)
+															: path.join(path.dirname(outputFilePath), 'request.ts'),
+														requestHookMakerFilePath:
+															syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
+																? syntheticalConfig.reactHooks.requestHookMakerFilePath
+																	? path.resolve(
+																			this.options.cwd,
+																			syntheticalConfig.reactHooks.requestHookMakerFilePath
+																	  )
+																	: path.join(path.dirname(outputFilePath), 'makeRequestHook.ts')
+																: '',
+													};
+												}
+												return {
+													type: type,
+													outputFilePath: outputFilePath,
+													code: categoryCode,
+													weights: last(sortByWeights(groupedInterfaceCodes[outputFilePath]))!.weights,
+												};
+											});
 										})
 									)
 								).flat();
@@ -258,6 +266,7 @@ export class Generator {
 		return res.data || res;
 	}
 
+	/** 获取接口分类列表 */
 	fetchExport: ({ serverUrl, token }: Partial<ServerConfig & ProjectConfig & CategoryConfig>) => Promise<Category[]> =
 		memoize(
 			async ({ serverUrl, token }: SyntheticalConfig) => {
@@ -328,5 +337,184 @@ export class Generator {
 		}
 
 		return category ? category.list : [];
+	}
+
+	/** 生成接口代码 */
+	async generateInterfaceCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
+		const extendedInterfaceInfo: ExtendedInterface = {
+			...interfaceInfo,
+			parsedPath: path.parse(interfaceInfo.path),
+		};
+		const requestFunctionName = isFunction(syntheticalConfig.getRequestFunctionName)
+			? await syntheticalConfig.getRequestFunctionName(extendedInterfaceInfo, changeCase)
+			: changeCase.camelCase(extendedInterfaceInfo.parsedPath.name);
+		// const requestConfigName = changeCase.camelCase(
+		//   `${requestFunctionName}RequestConfig`,
+		// )
+		// const requestConfigTypeName = changeCase.pascalCase(requestConfigName)
+		const requestDataTypeName = isFunction(syntheticalConfig.getRequestDataTypeName)
+			? await syntheticalConfig.getRequestDataTypeName(extendedInterfaceInfo, changeCase)
+			: changeCase.pascalCase(`${requestFunctionName}Request`);
+		const responseDataTypeName = isFunction(syntheticalConfig.getResponseDataTypeName)
+			? await syntheticalConfig.getResponseDataTypeName(extendedInterfaceInfo, changeCase)
+			: changeCase.pascalCase(`${requestFunctionName}Response`);
+		const requestDataJsonSchema = getRequestDataJsonSchema(
+			extendedInterfaceInfo,
+			syntheticalConfig.customTypeMapping || {}
+		);
+		const requestDataType = await jsonSchemaToType(requestDataJsonSchema, requestDataTypeName);
+		const responseDataJsonSchema = getResponseDataJsonSchema(
+			extendedInterfaceInfo,
+			syntheticalConfig.customTypeMapping || {},
+			syntheticalConfig.dataKey
+		);
+		const responseDataType = await jsonSchemaToType(responseDataJsonSchema, responseDataTypeName);
+		// const isRequestDataOptional = /(\{\}|any)$/s.test(requestDataType)
+		// const requestHookName =
+		//   syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
+		//     ? isFunction(syntheticalConfig.reactHooks.getRequestHookName)
+		//       ? /* istanbul ignore next */
+		//         await syntheticalConfig.reactHooks.getRequestHookName(
+		//           extendedInterfaceInfo,
+		//           changeCase,
+		//         )
+		//       : `use${changeCase.pascalCase(requestFunctionName)}`
+		//     : ''
+
+		// 支持路径参数
+		// const paramNames = (
+		//   extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
+		// ).map(item => item.name)
+		// const paramNamesLiteral = JSON.stringify(paramNames)
+		// const paramNameType =
+		//   paramNames.length === 0 ? 'string' : `'${paramNames.join("' | '")}'`
+
+		// 支持查询参数
+		// const queryNames = (
+		//   extendedInterfaceInfo.req_query /* istanbul ignore next */ || []
+		// ).map(item => item.name)
+		// const queryNamesLiteral = JSON.stringify(queryNames)
+		// const queryNameType =
+		//   queryNames.length === 0 ? 'string' : `'${queryNames.join("' | '")}'`
+
+		// 接口注释
+		const genComment = (genTitle: (title: string) => string) => {
+			const {
+				enabled: isEnabled = true,
+				title: hasTitle = true,
+				category: hasCategory = true,
+				tag: hasTag = true,
+				requestHeader: hasRequestHeader = true,
+				updateTime: hasUpdateTime = true,
+				link: hasLink = true,
+				extraTags,
+			} = {
+				...syntheticalConfig.comment,
+			} as CommentConfig;
+			if (!isEnabled) {
+				return '';
+			}
+			// 转义标题中的 /
+			const escapedTitle = String(extendedInterfaceInfo.title).replace(/\//g, '\\/');
+			const description = hasLink ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})` : escapedTitle;
+			const summary: Array<
+				| false
+				| {
+						label: string;
+						value: string | string[];
+				  }
+			> = [
+				hasCategory && {
+					label: '分类',
+					value: hasLink
+						? `[${extendedInterfaceInfo._category.name}↗](${extendedInterfaceInfo._category._url})`
+						: extendedInterfaceInfo._category.name,
+				},
+				hasTag && {
+					label: '标签',
+					value: extendedInterfaceInfo.tag.map((tag) => `\`${tag}\``),
+				},
+				hasRequestHeader && {
+					label: '请求头',
+					value: `\`${extendedInterfaceInfo.method.toUpperCase()} ${extendedInterfaceInfo.path}\``,
+				},
+				hasUpdateTime && {
+					label: '更新时间',
+					value: process.env.JEST_WORKER_ID // 测试时使用 unix 时间戳
+						? String(extendedInterfaceInfo.up_time)
+						: /* istanbul ignore next */
+						  `\`${dayjs(extendedInterfaceInfo.up_time * 1000).format('YYYY-MM-DD HH:mm:ss')}\``,
+				},
+			];
+			if (typeof extraTags === 'function') {
+				const tags = extraTags(extendedInterfaceInfo);
+				for (const tag of tags) {
+					(tag.position === 'start' ? summary.unshift : summary.push).call(summary, {
+						label: tag.name,
+						value: tag.value,
+					});
+				}
+			}
+			const titleComment = hasTitle
+				? dedent`
+            * ${genTitle(description)}
+            *
+          `
+				: '';
+			const extraComment: string = summary
+				.filter((item) => typeof item !== 'boolean' && !isEmpty(item.value))
+				.map((item) => {
+					const _item: Exclude<(typeof summary)[0], boolean> = item as any;
+					return `* @${_item.label} ${castArray(_item.value).join(', ')}`;
+				})
+				.join('\n');
+			return dedent`
+        /**
+         ${[titleComment, extraComment].filter(Boolean).join('\n')}
+         */
+      `;
+		};
+
+		// 请求参数额外信息
+		// const requestFunctionExtraInfo =
+		//   typeof syntheticalConfig.setRequestFunctionExtraInfo === 'function'
+		//     ? await syntheticalConfig.setRequestFunctionExtraInfo(
+		//         extendedInterfaceInfo,
+		//         changeCase,
+		//       )
+		//     : {}
+
+		// ${genComment(title => `接口 ${title} 的 **请求函数**`)}
+		//     export const ${requestFunctionName} = ${COMPRESSOR_TREE_SHAKING_ANNOTATION} (
+		//       requestData${
+		//         isRequestDataOptional ? '?' : ''
+		//       }: ${requestDataTypeName},
+		//       ...args: UserRequestRestArgs
+		//     ) => {
+		//       return request<${responseDataTypeName}>(
+		//         prepare(${requestConfigName}, requestData),
+		//         ...args,
+		//       )
+		//     }
+
+		const fetchConstruction = {
+			comment: genComment((title) => `接口 ${title} 的 **请求函数**`),
+			requestFunctionName: requestFunctionName,
+			requestDataTypeName: requestDataTypeName,
+			responseDataTypeName: responseDataTypeName,
+			path: JSON.stringify(extendedInterfaceInfo.path),
+			method: extendedInterfaceInfo.method,
+		};
+
+		return {
+			fetchConstruction,
+			typeCode: dedent`
+      ${genComment((title) => `接口 ${title} 的 **请求类型**`)}
+      ${requestDataType.trim()}
+
+      ${genComment((title) => `接口 ${title} 的 **返回类型**`)}
+      ${responseDataType.trim()}
+    `,
+		};
 	}
 }
