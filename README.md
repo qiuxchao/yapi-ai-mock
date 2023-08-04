@@ -16,7 +16,10 @@
 - [ ] mockjs 配置代码 文件尾部内容
 - [ ] mockjs 配置代码 接口前缀 默认 /mock
 
-支持命令 `init` 生成配置文件，导入 `defineConfig` 生成配置文件，填充默认配置
+要实现的功能：
+
+- 支持命令 `init` 生成配置文件，导入 `defineConfig` 生成配置文件，填充默认配置
+- 导出 `vite`、`webpack`、`rspack` 相关 `mock` 插件，支持在它们的 `config` 文件中配置插件
 
 在 mock 配置文件中植入 YAPI JSON 的 md5 值，用于判断是否需要重新生成 mock 文件
 

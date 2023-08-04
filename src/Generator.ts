@@ -7,6 +7,7 @@ import {
 	isFunction,
 	last,
 	memoize,
+	noop,
 	omit,
 	uniq,
 	values,
@@ -28,10 +29,12 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { httpGet, sortByWeights, throwError } from './utils';
-import { writeFileSync } from 'fs';
+import { getCachedPrettierOptions, httpGet, sortByWeights, throwError } from './utils';
+import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
+import prettier from 'prettier';
+import { exec } from 'child_process';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -223,7 +226,79 @@ export class Generator {
 	}
 
 	/** 写入文件 */
-	async write(outputFileList: any) {}
+	async write(outputFileList: OutputFileList) {
+		return Promise.all(
+			Object.keys(outputFileList).map(async (outputFilePath) => {
+				let { content, syntheticalConfig } = outputFileList[outputFilePath];
+
+				// 始终写入主文件
+				const rawOutputContent = dedent`
+          /* tslint:disable */
+          /* eslint-disable */
+
+          /* 该文件工具自动生成，请勿直接修改！！！ */
+         
+          // @ts-ignore
+       
+          ${content.join('\n\n').trim()}
+        `;
+
+				// ref: https://prettier.io/docs/en/options.html
+				const [prettyOutputContent] = await this.prettierFile(rawOutputContent);
+				const outputContent = `${dedent`
+          /* prettier-ignore-start */
+          ${prettyOutputContent}
+          /* prettier-ignore-end */
+        `}\n`;
+				await fs.outputFile(outputFilePath, outputContent);
+
+				// 如果要生成 JavaScript 代码，
+				// 则先对主文件进行 tsc 编译，主文件引用到的其他文件也会被编译，
+				// 然后，删除原始的 .tsx? 文件。
+				if (syntheticalConfig.target === 'javascript') {
+					await this.tsc(outputFilePath);
+					await Promise.all([fs.remove(outputFilePath).catch(noop)]);
+				}
+			})
+		);
+	}
+
+	async prettierFile(content: string): Promise<[string, boolean]> {
+		let result = content;
+		let hasError = false;
+		try {
+			result = await prettier.format(content, {
+				singleQuote: true,
+				trailingComma: 'all',
+				printWidth: 100,
+				parser: 'typescript',
+				...(await getCachedPrettierOptions()),
+			});
+		} catch (error) {
+			hasError = true;
+		}
+		return [result, hasError];
+	}
+
+	async tsc(file: string) {
+		return new Promise<void>((resolve) => {
+			// add this to fix bug that not-generator-file-on-window
+			const command = `${require('os').platform() === 'win32' ? 'node ' : ''}${JSON.stringify(
+				require.resolve(`typescript/bin/tsc`)
+			)}`;
+
+			exec(
+				`${command} --target ES2019 --module ESNext --jsx preserve --declaration --esModuleInterop ${JSON.stringify(
+					file
+				)}`,
+				{
+					cwd: this.options.cwd,
+					env: process.env,
+				},
+				() => resolve()
+			);
+		});
+	}
 
 	async fetchApi<T = any>(url: string, query: Record<string, any>): Promise<T> {
 		const res = await httpGet<{

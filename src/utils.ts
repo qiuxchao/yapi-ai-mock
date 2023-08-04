@@ -1,4 +1,6 @@
 import nodeFetch from 'node-fetch';
+import { memoize, run } from 'vtils';
+import prettier from 'prettier';
 
 /**
  * 抛出错误。
@@ -43,3 +45,39 @@ export function sortByWeights<T extends { weights: number[] }>(list: T[]): T[] {
 	});
 	return list;
 }
+
+export async function getPrettierOptions(): Promise<prettier.Options> {
+	const prettierOptions: prettier.Options = {
+		parser: 'typescript',
+		printWidth: 120,
+		tabWidth: 2,
+		singleQuote: true,
+		semi: false,
+		trailingComma: 'all',
+		bracketSpacing: false,
+		endOfLine: 'lf',
+	};
+
+	// 测试时跳过本地配置的解析
+	if (process.env.JEST_WORKER_ID) {
+		return prettierOptions;
+	}
+
+	const [prettierConfigPathErr, prettierConfigPath] = await run(() => prettier.resolveConfigFile());
+	if (prettierConfigPathErr || !prettierConfigPath) {
+		return prettierOptions;
+	}
+
+	const [prettierConfigErr, prettierConfig] = await run(() => prettier.resolveConfig(prettierConfigPath));
+	if (prettierConfigErr || !prettierConfig) {
+		return prettierOptions;
+	}
+
+	return {
+		...prettierOptions,
+		...prettierConfig,
+		parser: 'typescript',
+	};
+}
+
+export const getCachedPrettierOptions: () => Promise<prettier.Options> = memoize(getPrettierOptions);

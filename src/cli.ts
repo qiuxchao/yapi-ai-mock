@@ -44,7 +44,7 @@ export default async function ytm(config: ConfigWithHooks) {
 		const output = await generator.generate();
 		spinner.stop();
 		consola.success('获取数据并生成代码完毕');
-
+		fs.writeFileSync('output.json', JSON.stringify(output));
 		await generator.write(output);
 		consola.success('写入文件完毕');
 		await config!.hooks?.success?.();
