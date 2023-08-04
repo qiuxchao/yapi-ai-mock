@@ -421,32 +421,14 @@ interface SharedConfig {
      */
     preproccessInterface?(interfaceInfo: Interface, changeCase: ChangeCase, syntheticalConfig: SyntheticalConfig): Interface | false;
     /**
-     * 获取请求函数的名称。
+     * 获取Mock函数的名称。
      *
      * @default changeCase.camelCase(interfaceInfo.parsedPath.name)
      * @param interfaceInfo 接口信息
      * @param changeCase 常用的大小写转换函数集合对象
      * @returns 请求函数的名称
      */
-    getRequestFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
-    /**
-     * 获取请求数据类型的名称。
-     *
-     * @default changeCase.pascalCase(`${requestFunctionName}Request`)
-     * @param interfaceInfo 接口信息
-     * @param changeCase 常用的大小写转换函数集合对象
-     * @returns 请求数据类型的名称
-     */
-    getRequestDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
-    /**
-     * 获取响应数据类型的名称。
-     *
-     * @default changeCase.pascalCase(`${requestFunctionName}Response`)
-     * @param interfaceInfo 接口信息
-     * @param changeCase 常用的大小写转换函数集合对象
-     * @returns 响应数据类型的名称
-     */
-    getResponseDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
+    getMockFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
 }
 /**
  * 分类的配置。
@@ -560,6 +542,10 @@ interface ServerConfig extends SharedConfig {
      * gpt 配置
      */
     gpt: GptConfig;
+    /** mock 代码片段 */
+    mockStatement: (mockConstruction: MockConstruction) => string;
+    /** 引入 mock 代码片段 */
+    mockImportStatement: () => string;
 }
 /** 命令行钩子 */
 interface CliHooks {
@@ -575,5 +561,16 @@ type ConfigWithHooks = Config & {
 };
 /** 配置。 */
 type Config = ServerConfig | ServerConfig[];
+/** mock 代码片段配置 */
+interface MockConstruction {
+    /** 注释 */
+    comment: string;
+    /** mock 方法名（可通过 getMockFunctionName 配置） */
+    mockFunctionName: string;
+    /** 请求路径 */
+    path: string;
+    /** 请求方法 */
+    method: Method;
+}
 
-export { Config as C, ExtendedInterface as E, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CategoryList as k, CommentConfig as l, SharedConfig as m, CategoryConfig as n, ProjectConfig as o, MockConfig as p, ServerConfig as q };
+export { Config as C, ExtendedInterface as E, GptConfig as G, Interface as I, Method as M, Project as P, RequestBodyType as R, SyntheticalConfig as S, CliHooks as a, ConfigWithHooks as b, ChangeCase as c, RequestParamType as d, RequestQueryType as e, RequestFormItemType as f, ResponseBodyType as g, Required as h, InterfaceList as i, Category as j, CategoryList as k, CommentConfig as l, SharedConfig as m, CategoryConfig as n, ProjectConfig as o, MockConfig as p, ServerConfig as q, MockConstruction as r };

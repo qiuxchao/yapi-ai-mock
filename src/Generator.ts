@@ -1,4 +1,16 @@
-import { castArray, cloneDeepFast, dedent, groupBy, isEmpty, isFunction, last, memoize, omit, uniq } from 'vtils';
+import {
+	castArray,
+	cloneDeepFast,
+	dedent,
+	groupBy,
+	isEmpty,
+	isFunction,
+	last,
+	memoize,
+	omit,
+	uniq,
+	values,
+} from 'vtils';
 import * as changeCase from 'change-case';
 import {
 	Category,
@@ -9,12 +21,14 @@ import {
 	ExtendedInterface,
 	Interface,
 	InterfaceList,
+	Method,
+	MockConstruction,
 	Project,
 	ProjectConfig,
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { httpGet, throwError } from './utils';
+import { httpGet, sortByWeights, throwError } from './utils';
 import { writeFileSync } from 'fs';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -145,7 +159,6 @@ export class Generator {
 														outputFilePath: string;
 														weights: number[];
 														code: string;
-														type: 'fn' | 'type';
 													}>
 												>(async (interfaceInfo) => {
 													const outputFilePath = path.resolve(
@@ -156,7 +169,7 @@ export class Generator {
 													);
 													const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
 
-													const { typeCode: code, fetchConstruction } = await this.generateInterfaceCode(
+													const code = await this.generateInterfaceCode(
 														syntheticalConfig,
 														interfaceInfo
 														// categoryUID,
@@ -167,34 +180,11 @@ export class Generator {
 														outputFilePath,
 														weights,
 														code,
-														fetchConstruction,
-														type: 'type',
 													};
 												})
 											);
-											//  这就是 分类
-											// --
 
-											// { categoryUID: string; outputFilePath: string; weights: number[]; code: string; }
-											const fetchFunctions = interfaceCodes.map((e: any) => ({
-												...e,
-												type: 'fn',
-												outputFilePath: e.outputFilePath,
-												code: (syntheticalConfig.requestStatement
-													? syntheticalConfig.requestStatement(e.fetchConstruction)
-													: '') as any,
-											}));
-
-											const groupedInterfaceCodes = groupBy(
-												interfaceCodes
-													.map((e: any) => {
-														e.outputFilePath = e.outputFilePath.replace(/\w+\.ts$/, 'typings.d.ts');
-														e.type = 'type';
-														return e;
-													})
-													.concat(fetchFunctions),
-												(item) => item.outputFilePath
-											);
+											const groupedInterfaceCodes = groupBy(interfaceCodes, (item) => item.outputFilePath);
 
 											return Object.keys(groupedInterfaceCodes).map((outputFilePath) => {
 												const data = groupedInterfaceCodes[outputFilePath];
@@ -202,28 +192,13 @@ export class Generator {
 													.filter(Boolean)
 													.join('\n\n');
 
-												const type = data[0].type;
 												if (!outputFileList[outputFilePath]) {
 													outputFileList[outputFilePath] = {
 														syntheticalConfig,
 														content: [],
-														type: type,
-														requestFunctionFilePath: syntheticalConfig.requestFunctionFilePath
-															? path.resolve(this.options.cwd, syntheticalConfig.requestFunctionFilePath)
-															: path.join(path.dirname(outputFilePath), 'request.ts'),
-														requestHookMakerFilePath:
-															syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
-																? syntheticalConfig.reactHooks.requestHookMakerFilePath
-																	? path.resolve(
-																			this.options.cwd,
-																			syntheticalConfig.reactHooks.requestHookMakerFilePath
-																	  )
-																	: path.join(path.dirname(outputFilePath), 'makeRequestHook.ts')
-																: '',
 													};
 												}
 												return {
-													type: type,
 													outputFilePath: outputFilePath,
 													code: categoryCode,
 													weights: last(sortByWeights(groupedInterfaceCodes[outputFilePath]))!.weights,
@@ -233,13 +208,10 @@ export class Generator {
 									)
 								).flat();
 
-								// for (const groupedCodes of values(groupBy(codes, (item) => item.outputFilePath))) {
-								// 	// outputFileList[groupedCodes[0].outputFilePath].type = groupedCodes.type
-								// 	sortByWeights(groupedCodes);
-								// 	outputFileList[groupedCodes[0].outputFilePath].content.push(...groupedCodes.map((item) => item.code));
-
-								// 	outputFileList[groupedCodes[0].outputFilePath].type = groupedCodes[0].type;
-								// }
+								for (const groupedCodes of values(groupBy(codes, (item) => item.outputFilePath))) {
+									sortByWeights(groupedCodes);
+									outputFileList[groupedCodes[0].outputFilePath].content.push(...groupedCodes.map((item) => item.code));
+								}
 							})
 						);
 					})
@@ -345,57 +317,9 @@ export class Generator {
 			...interfaceInfo,
 			parsedPath: path.parse(interfaceInfo.path),
 		};
-		const requestFunctionName = isFunction(syntheticalConfig.getRequestFunctionName)
-			? await syntheticalConfig.getRequestFunctionName(extendedInterfaceInfo, changeCase)
+		const mockFunctionName = isFunction(syntheticalConfig.getMockFunctionName)
+			? await syntheticalConfig.getMockFunctionName(extendedInterfaceInfo, changeCase)
 			: changeCase.camelCase(extendedInterfaceInfo.parsedPath.name);
-		// const requestConfigName = changeCase.camelCase(
-		//   `${requestFunctionName}RequestConfig`,
-		// )
-		// const requestConfigTypeName = changeCase.pascalCase(requestConfigName)
-		const requestDataTypeName = isFunction(syntheticalConfig.getRequestDataTypeName)
-			? await syntheticalConfig.getRequestDataTypeName(extendedInterfaceInfo, changeCase)
-			: changeCase.pascalCase(`${requestFunctionName}Request`);
-		const responseDataTypeName = isFunction(syntheticalConfig.getResponseDataTypeName)
-			? await syntheticalConfig.getResponseDataTypeName(extendedInterfaceInfo, changeCase)
-			: changeCase.pascalCase(`${requestFunctionName}Response`);
-		const requestDataJsonSchema = getRequestDataJsonSchema(
-			extendedInterfaceInfo,
-			syntheticalConfig.customTypeMapping || {}
-		);
-		const requestDataType = await jsonSchemaToType(requestDataJsonSchema, requestDataTypeName);
-		const responseDataJsonSchema = getResponseDataJsonSchema(
-			extendedInterfaceInfo,
-			syntheticalConfig.customTypeMapping || {},
-			syntheticalConfig.dataKey
-		);
-		const responseDataType = await jsonSchemaToType(responseDataJsonSchema, responseDataTypeName);
-		// const isRequestDataOptional = /(\{\}|any)$/s.test(requestDataType)
-		// const requestHookName =
-		//   syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
-		//     ? isFunction(syntheticalConfig.reactHooks.getRequestHookName)
-		//       ? /* istanbul ignore next */
-		//         await syntheticalConfig.reactHooks.getRequestHookName(
-		//           extendedInterfaceInfo,
-		//           changeCase,
-		//         )
-		//       : `use${changeCase.pascalCase(requestFunctionName)}`
-		//     : ''
-
-		// 支持路径参数
-		// const paramNames = (
-		//   extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
-		// ).map(item => item.name)
-		// const paramNamesLiteral = JSON.stringify(paramNames)
-		// const paramNameType =
-		//   paramNames.length === 0 ? 'string' : `'${paramNames.join("' | '")}'`
-
-		// 支持查询参数
-		// const queryNames = (
-		//   extendedInterfaceInfo.req_query /* istanbul ignore next */ || []
-		// ).map(item => item.name)
-		// const queryNamesLiteral = JSON.stringify(queryNames)
-		// const queryNameType =
-		//   queryNames.length === 0 ? 'string' : `'${queryNames.join("' | '")}'`
 
 		// 接口注释
 		const genComment = (genTitle: (title: string) => string) => {
@@ -475,46 +399,17 @@ export class Generator {
       `;
 		};
 
-		// 请求参数额外信息
-		// const requestFunctionExtraInfo =
-		//   typeof syntheticalConfig.setRequestFunctionExtraInfo === 'function'
-		//     ? await syntheticalConfig.setRequestFunctionExtraInfo(
-		//         extendedInterfaceInfo,
-		//         changeCase,
-		//       )
-		//     : {}
-
-		// ${genComment(title => `接口 ${title} 的 **请求函数**`)}
-		//     export const ${requestFunctionName} = ${COMPRESSOR_TREE_SHAKING_ANNOTATION} (
-		//       requestData${
-		//         isRequestDataOptional ? '?' : ''
-		//       }: ${requestDataTypeName},
-		//       ...args: UserRequestRestArgs
-		//     ) => {
-		//       return request<${responseDataTypeName}>(
-		//         prepare(${requestConfigName}, requestData),
-		//         ...args,
-		//       )
-		//     }
-
-		const fetchConstruction = {
-			comment: genComment((title) => `接口 ${title} 的 **请求函数**`),
-			requestFunctionName: requestFunctionName,
-			requestDataTypeName: requestDataTypeName,
-			responseDataTypeName: responseDataTypeName,
+		// 接口元信息
+		const mockConstruction: MockConstruction = {
+			comment: genComment((title) => `接口 ${title} 的 **Mock函数**`),
+			mockFunctionName: mockFunctionName,
 			path: JSON.stringify(extendedInterfaceInfo.path),
 			method: extendedInterfaceInfo.method,
 		};
 
-		return {
-			fetchConstruction,
-			typeCode: dedent`
-      ${genComment((title) => `接口 ${title} 的 **请求类型**`)}
-      ${requestDataType.trim()}
+		// 通过配置文件中的 `mockStatement` 方法来生成 mock 代码
+		const code = syntheticalConfig.mockStatement ? syntheticalConfig.mockStatement(mockConstruction) : '';
 
-      ${genComment((title) => `接口 ${title} 的 **返回类型**`)}
-      ${responseDataType.trim()}
-    `,
-		};
+		return code;
 	}
 }

@@ -465,34 +465,14 @@ export interface SharedConfig {
 	): Interface | false;
 
 	/**
-	 * 获取请求函数的名称。
+	 * 获取Mock函数的名称。
 	 *
 	 * @default changeCase.camelCase(interfaceInfo.parsedPath.name)
 	 * @param interfaceInfo 接口信息
 	 * @param changeCase 常用的大小写转换函数集合对象
 	 * @returns 请求函数的名称
 	 */
-	getRequestFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
-
-	/**
-	 * 获取请求数据类型的名称。
-	 *
-	 * @default changeCase.pascalCase(`${requestFunctionName}Request`)
-	 * @param interfaceInfo 接口信息
-	 * @param changeCase 常用的大小写转换函数集合对象
-	 * @returns 请求数据类型的名称
-	 */
-	getRequestDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
-
-	/**
-	 * 获取响应数据类型的名称。
-	 *
-	 * @default changeCase.pascalCase(`${requestFunctionName}Response`)
-	 * @param interfaceInfo 接口信息
-	 * @param changeCase 常用的大小写转换函数集合对象
-	 * @returns 响应数据类型的名称
-	 */
-	getResponseDataTypeName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
+	getMockFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
 }
 
 /**
@@ -621,9 +601,10 @@ export interface ServerConfig extends SharedConfig {
 	 */
 	gpt: GptConfig;
 
-	/**
-	 * mock 配置
-	 */
+	/** mock 代码片段 */
+	mockStatement: (mockConstruction: MockConstruction) => string;
+	/** 引入 mock 代码片段 */
+	mockImportStatement: () => string;
 }
 
 /** 命令行钩子 */
@@ -642,3 +623,15 @@ export type ConfigWithHooks = Config & {
 
 /** 配置。 */
 export type Config = ServerConfig | ServerConfig[];
+
+/** mock 代码片段配置 */
+export interface MockConstruction {
+	/** 注释 */
+	comment: string;
+	/** mock 方法名（可通过 getMockFunctionName 配置） */
+	mockFunctionName: string;
+	/** 请求路径 */
+	path: string;
+	/** 请求方法 */
+	method: Method;
+}
