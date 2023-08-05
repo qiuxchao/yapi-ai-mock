@@ -1,6 +1,6 @@
-# yapi-mockjs-gpt
+# yapi-gpt-mock
 
-`yapi-mockjs-gpt` 是一个将 YAPI 接口转换为 Mock.js 配置文件的工具，可以帮助开发人员快速生成 Mock.js 配置文件，提高工作效率。基于 GPT 技术实现。
+`yapi-gpt-mock` 是一个将 YAPI 接口转换为 Mock.js 配置文件的工具，可以帮助开发人员快速生成 Mock.js 配置文件，提高工作效率。基于 GPT 技术实现。
 
 可配置的项：
 
