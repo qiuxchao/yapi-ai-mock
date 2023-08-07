@@ -24,13 +24,13 @@ TSNode.register({
 		esModuleInterop: true,
 		allowSyntheticDefaultImports: true,
 		importHelpers: false,
-		// 转换 js，支持在 ytm.config.js 里使用最新语法
+		// 转换 js，支持在 ygm.config.js 里使用最新语法
 		allowJs: true,
 		lib: ['es2017'],
 	},
 });
 
-export default async function ytm(config: ConfigWithHooks) {
+export default async function ygm(config: ConfigWithHooks) {
 	const generator = new Generator(config);
 	let spinner = ora('正在获取数据并生成代码...').start();
 	try {
@@ -71,8 +71,8 @@ export async function run(
 
 	if (!options?.configFile) {
 		cwd = process.cwd();
-		configTSFile = path.join(cwd, 'ytm.config.ts');
-		configJSFile = path.join(cwd, 'ytm.config.js');
+		configTSFile = path.join(cwd, 'ygm.config.ts');
+		configJSFile = path.join(cwd, 'ygm.config.js');
 		const configTSFileExist = await fs.pathExists(configTSFile);
 		const configJSFileExist = !configTSFileExist && (await fs.pathExists(configJSFile));
 		configFileExist = configTSFileExist || configJSFileExist;
@@ -90,12 +90,12 @@ export async function run(
 	consola.success(`找到配置文件: ${configFile}`);
 	const config: ConfigWithHooks = require(configFile).default;
 	console.log(config);
-	await ytm(config);
+	await ygm(config);
 }
 
 if (require.main === module) {
 	const argv = yargs(process.argv).alias('c', 'config').argv;
-	// 指定配置文件运行：ytm -c|-config=配置文件路径
+	// 指定配置文件运行：ygm -c|-config=配置文件路径
 	run(argv._[2] as any, {
 		configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
 	});

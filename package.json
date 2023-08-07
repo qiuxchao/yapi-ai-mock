@@ -1,10 +1,11 @@
 {
-	"name": "yapi-to-mockjs",
+	"name": "yapi-gpt-mock",
 	"version": "1.0.0",
 	"description": "利用GPT技术，将API文档生成为本地的Mock文件",
 	"keywords": [
 		"yapi",
 		"codegen",
+		"mockjs",
 		"gpt"
 	],
 	"type": "module",
@@ -14,7 +15,7 @@
 		"lib"
 	],
 	"bin": {
-		"ytm": "./lib/cli.cjs"
+		"ygm": "./lib/cli.cjs"
 	},
 	"scripts": {
 		"build": "unbuild",

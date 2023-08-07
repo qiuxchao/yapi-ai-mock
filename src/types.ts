@@ -175,6 +175,8 @@ export interface Interface {
 	_project: Project;
 	/** 接口在 YApi 上的地址（自行实现） */
 	_url: string;
+	/** 接口的 Mock 代码（自行实现） */
+	_mockCode: string;
 	/** 接口名称 */
 	title: string;
 	/** 状态 */
@@ -515,14 +517,9 @@ export interface ProjectConfig extends SharedConfig {
  */
 export interface GptConfig {
 	/**
-	 * 是否优先从 `env` 中获取 gpt 服务地址。此选项会从 `process.env` 中的 `GPT_URL` 字段获取服务地址。
+	 * gpt 服务地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
 	 */
-	formEnv?: boolean;
-
-	/**
-	 * gpt 服务地址。开启了 `fromEnv` 选项后，此选项可以不配置。
-	 */
-	serverUr?: string;
+	serverUrl: string;
 
 	/**
 	 * gpt 支持的最大消息字符数
@@ -552,10 +549,19 @@ export interface GptConfig {
 	dataKey?: OneOrMore<string>;
 }
 
-/**
- * Mock 配置
- */
-export interface MockConfig {
+export interface ServerConfig extends SharedConfig {
+	/**
+	 * yapi 服务地址。也可以通过 `env` 中的 `YAPI_SERVER_URL` 来配置。
+	 *
+	 * @example 'http://yapi.foo.bar'
+	 */
+	serverUrl: string;
+
+	/**
+	 * 项目列表
+	 */
+	projects: ProjectConfig[];
+
 	/**
 	 * mock 目录路径。默认为 `mock`。
 	 *
@@ -567,34 +573,6 @@ export interface MockConfig {
 	 * @default 'mock'
 	 */
 	mockDir?: string;
-
-	/**
-	 * 输出文件路径。
-	 *
-	 * 可以是 `相对路径` 或 `绝对路径`。
-	 *
-	 * @example 'src/api/index.ts'
-	 */
-	outputFilePath?: string | ((interfaceInfo: Interface, changeCase: ChangeCase) => string);
-}
-
-export interface ServerConfig extends SharedConfig {
-	/**
-	 * 是否优先从 `env` 中获取服务地址。此选项会从 `process.env` 中的 `YAPI_SERVER_URL` 字段获取服务地址。
-	 */
-	fromEnv?: boolean;
-
-	/**
-	 * yapi 服务地址。开启了 `fromEnv` 选项后，此选项可以不配置。
-	 *
-	 * @example 'http://yapi.foo.bar'
-	 */
-	serverUrl?: string;
-
-	/**
-	 * 项目列表
-	 */
-	projects: ProjectConfig[];
 
 	/**
 	 * gpt 配置

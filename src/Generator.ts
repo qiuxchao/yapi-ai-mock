@@ -141,19 +141,12 @@ export class Generator {
 												.map((interfaceInfo) => {
 													// 实现 _project 字段
 													interfaceInfo._project = omit(projectInfo, ['cats']);
-													// 预处理
-													const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
-														? syntheticalConfig.preproccessInterface(
-																cloneDeepFast(interfaceInfo),
-																changeCase,
-																syntheticalConfig
-														  )
-														: interfaceInfo;
-
-													return _interfaceInfo;
+													return interfaceInfo;
 												})
 												.filter(Boolean) as any;
 											interfaceList.sort((a, b) => a._id - b._id);
+
+											await this.getMockCode(syntheticalConfig, interfaceList);
 
 											const interfaceCodes = await Promise.all(
 												interfaceList.map<
@@ -172,7 +165,7 @@ export class Generator {
 													);
 													const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
 
-													const code = await this.generateInterfaceCode(
+													const code = await this.generateCode(
 														syntheticalConfig,
 														interfaceInfo
 														// categoryUID,
@@ -386,8 +379,8 @@ export class Generator {
 		return category ? category.list : [];
 	}
 
-	/** 生成接口代码 */
-	async generateInterfaceCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
+	/** 生成代码 */
+	async generateCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
 		const extendedInterfaceInfo: ExtendedInterface = {
 			...interfaceInfo,
 			parsedPath: path.parse(interfaceInfo.path),
@@ -476,7 +469,7 @@ export class Generator {
 
 		// 接口元信息
 		const mockConstruction: MockConstruction = {
-			comment: genComment((title) => `接口 ${title} 的 **Mock函数**`),
+			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
 			mockFunctionName: mockFunctionName,
 			path: JSON.stringify(extendedInterfaceInfo.path),
 			method: extendedInterfaceInfo.method,
@@ -487,4 +480,7 @@ export class Generator {
 
 		return code;
 	}
+
+	/** 生成 mock 代码 */
+	async getMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {}
 }
