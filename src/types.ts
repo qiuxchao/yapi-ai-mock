@@ -465,16 +465,6 @@ export interface SharedConfig {
 		changeCase: ChangeCase,
 		syntheticalConfig: SyntheticalConfig
 	): Interface | false;
-
-	/**
-	 * 获取Mock函数的名称。
-	 *
-	 * @default changeCase.camelCase(interfaceInfo.parsedPath.name)
-	 * @param interfaceInfo 接口信息
-	 * @param changeCase 常用的大小写转换函数集合对象
-	 * @returns 请求函数的名称
-	 */
-	getMockFunctionName?(interfaceInfo: ExtendedInterface, changeCase: ChangeCase): string;
 }
 
 /**
@@ -517,13 +507,20 @@ export interface ProjectConfig extends SharedConfig {
  */
 export interface GptConfig {
 	/**
-	 * gpt 服务地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
+	 * gpt 接口地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
+	 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
 	 */
 	serverUrl: string;
 
 	/**
+	 * 请求方式。
+	 * @default 'POST'
+	 */
+	method?: 'GET' | 'POST';
+
+	/**
 	 * gpt 支持的最大消息字符数
-	 * @default 4096
+	 * @default 8192
 	 */
 	maxLength?: number;
 
@@ -606,8 +603,6 @@ export type Config = ServerConfig | ServerConfig[];
 export interface MockConstruction {
 	/** 注释 */
 	comment: string;
-	/** mock 方法名（可通过 getMockFunctionName 配置） */
-	mockFunctionName: string;
 	/** 请求路径 */
 	path: string;
 	/** 请求方法 */

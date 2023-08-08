@@ -7,6 +7,7 @@ import ora from 'ora';
 import yargs from 'yargs';
 import { wait } from 'vtils';
 import { Generator } from './Generator';
+import { httpPost } from './utils';
 
 TSNode.register({
 	// 不加载本地的 tsconfig.json

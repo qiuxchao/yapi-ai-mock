@@ -29,7 +29,7 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { getCachedPrettierOptions, httpGet, sortByWeights, throwError } from './utils';
+import { getCachedPrettierOptions, getPrompt, httpGet, httpPost, sortByWeights, throwError } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -385,9 +385,6 @@ export class Generator {
 			...interfaceInfo,
 			parsedPath: path.parse(interfaceInfo.path),
 		};
-		const mockFunctionName = isFunction(syntheticalConfig.getMockFunctionName)
-			? await syntheticalConfig.getMockFunctionName(extendedInterfaceInfo, changeCase)
-			: changeCase.camelCase(extendedInterfaceInfo.parsedPath.name);
 
 		// 接口注释
 		const genComment = (genTitle: (title: string) => string) => {
@@ -470,7 +467,6 @@ export class Generator {
 		// 接口元信息
 		const mockConstruction: MockConstruction = {
 			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
-			mockFunctionName: mockFunctionName,
 			path: JSON.stringify(extendedInterfaceInfo.path),
 			method: extendedInterfaceInfo.method,
 		};
@@ -482,5 +478,37 @@ export class Generator {
 	}
 
 	/** 生成 mock 代码 */
-	async getMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {}
+	async getMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
+		const {
+			serverUrl,
+			method = 'POST',
+			maxLength = 8192,
+			headers = {},
+			dataKey = ['data', 'content'],
+		} = syntheticalConfig.gpt!;
+		if (!serverUrl) throwError('未配置 gpt.serverUrl');
+		const responseBodyList = interfaceList.map((i) => ({
+			res_body: i.res_body,
+			id: i._id,
+		}));
+		let input = '';
+		const result = await httpPost(
+			serverUrl,
+			JSON.stringify({
+				messages: [
+					{
+						role: 'system',
+						content: 'You are a mockjs expert.',
+					},
+					{
+						role: 'user',
+						content: getPrompt(''),
+					},
+				],
+			}),
+			{
+				'Content-Type': 'application/json',
+			}
+		);
+	}
 }
