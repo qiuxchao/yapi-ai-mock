@@ -1,4 +1,19 @@
-import { castArray, dedent, groupBy, isEmpty, last, memoize, noop, omit, uniq, values, get } from 'vtils';
+import {
+	castArray,
+	dedent,
+	groupBy,
+	isEmpty,
+	last,
+	memoize,
+	noop,
+	omit,
+	uniq,
+	values,
+	get,
+	isFunction,
+	indent,
+	cloneDeepFast,
+} from 'vtils';
 import * as changeCase from 'change-case';
 import {
 	Category,
@@ -133,7 +148,15 @@ export class Generator {
 												.map((interfaceInfo) => {
 													// 实现 _project 字段
 													interfaceInfo._project = omit(projectInfo, ['cats']);
-													return interfaceInfo;
+													// 预处理
+													const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
+														? syntheticalConfig.preproccessInterface(
+																cloneDeepFast(interfaceInfo),
+																changeCase,
+																syntheticalConfig
+														  )
+														: interfaceInfo;
+													return _interfaceInfo;
 												})
 												.filter(Boolean) as any;
 											interfaceList.sort((a, b) => a._id - b._id);
@@ -205,6 +228,14 @@ export class Generator {
           /* 该文件工具自动生成，请勿直接修改！！！ */
          
           // @ts-ignore
+
+					${
+						syntheticalConfig?.mockImportStatement?.() ??
+						`
+					import mockJs from 'mockjs';
+					import { defineMock } from 'vite-plugin-mock-dev-server';
+					`
+					}
        
           ${content.join('\n\n').trim()}
         `;
@@ -442,10 +473,22 @@ export class Generator {
 			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
 			path: JSON.stringify(extendedInterfaceInfo.path),
 			method: extendedInterfaceInfo.method,
+			mockCode: extendedInterfaceInfo._mockCode,
 		};
 
 		// 通过配置文件中的 `mockStatement` 方法来生成 mock 代码
-		const code = syntheticalConfig.mockStatement ? syntheticalConfig.mockStatement(mockConstruction) : '';
+		const code = isFunction(syntheticalConfig.mockStatement)
+			? syntheticalConfig.mockStatement(mockConstruction)
+			: indent`
+			${mockConstruction.comment}
+			export default defineMock({
+				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
+				method: '${mockConstruction.method}',
+				body: mockJs.mock({
+					data: 'mock 代码放在这里'
+				}),
+			});
+		`;
 
 		return code;
 	}
