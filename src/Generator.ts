@@ -103,7 +103,6 @@ export class Generator {
 								categoryIds = categoryIds.filter((id) => !!projectInfo.cats.find((cat) => cat._id === id));
 								// 顺序化
 								categoryIds = categoryIds.sort();
-								console.log('categoryIds: ', categoryIds);
 
 								const codes = (
 									await Promise.all(
@@ -144,20 +143,18 @@ export class Generator {
 											const interfaceCodes = await Promise.all(
 												interfaceList.map<
 													Promise<{
-														categoryUID: string;
 														outputFilePath: string;
 														weights: number[];
 														code: string;
+														interfaceInfo: Interface;
 													}>
 												>(async (interfaceInfo) => {
 													const outputFilePath = path.resolve(
 														this.options.cwd,
-														`${interfaceInfo._category.desc}/${changeCase.camelCase(
-															interfaceInfo.path.replace(/^\//, '')
-														)}.ts`
+														`${syntheticalConfig.mockDir || 'mock'}/${
+															interfaceInfo._category.desc
+														}/${changeCase.camelCase(interfaceInfo.path.replace(/^\//, ''))}.ts`
 													);
-													console.log(outputFilePath);
-													const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
 
 													const code = await this.generateCode(
 														syntheticalConfig,
@@ -165,43 +162,25 @@ export class Generator {
 														// categoryUID,
 													);
 													const weights: number[] = [serverIndex, projectIndex, categoryIndex, categoryIndex2];
+
+													outputFileList[outputFilePath] = {
+														syntheticalConfig,
+														content: [code],
+													};
+
 													return {
-														categoryUID,
 														outputFilePath,
 														weights,
 														code,
+														interfaceInfo,
 													};
 												})
 											);
 
-											const groupedInterfaceCodes = groupBy(interfaceCodes, (item) => item.outputFilePath);
-
-											return Object.keys(groupedInterfaceCodes).map((outputFilePath) => {
-												const data = groupedInterfaceCodes[outputFilePath];
-												const categoryCode = [...sortByWeights(data).map((item) => item.code)]
-													.filter(Boolean)
-													.join('\n\n');
-
-												if (!outputFileList[outputFilePath]) {
-													outputFileList[outputFilePath] = {
-														syntheticalConfig,
-														content: [],
-													};
-												}
-												return {
-													outputFilePath: outputFilePath,
-													code: categoryCode,
-													weights: last(sortByWeights(groupedInterfaceCodes[outputFilePath]))!.weights,
-												};
-											});
+											return sortByWeights(interfaceCodes);
 										})
 									)
 								).flat();
-
-								for (const groupedCodes of values(groupBy(codes, (item) => item.outputFilePath))) {
-									sortByWeights(groupedCodes);
-									outputFileList[groupedCodes[0].outputFilePath].content.push(...groupedCodes.map((item) => item.code));
-								}
 							})
 						);
 					})
