@@ -232,7 +232,7 @@ export class Generator {
 					${
 						syntheticalConfig?.mockImportStatement?.() ??
 						`
-					import mockJs from 'mockjs';
+					import mockjs from 'mockjs';
 					import { defineMock } from 'vite-plugin-mock-dev-server';
 					`
 					}
@@ -484,7 +484,7 @@ export class Generator {
 			export default defineMock({
 				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
 				method: '${mockConstruction.method}',
-				body: mockJs.mock({
+				body: mockjs.mock({
 					data: 'mock 代码放在这里'
 				}),
 			});
