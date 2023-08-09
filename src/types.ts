@@ -513,12 +513,6 @@ export interface GptConfig {
 	serverUrl: string;
 
 	/**
-	 * 请求方式。
-	 * @default 'POST'
-	 */
-	method?: 'GET' | 'POST';
-
-	/**
 	 * gpt 支持的最大消息字符数
 	 * @default 8192
 	 */

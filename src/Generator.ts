@@ -1,17 +1,4 @@
-import {
-	castArray,
-	cloneDeepFast,
-	dedent,
-	groupBy,
-	isEmpty,
-	isFunction,
-	last,
-	memoize,
-	noop,
-	omit,
-	uniq,
-	values,
-} from 'vtils';
+import { castArray, dedent, groupBy, isEmpty, last, memoize, noop, omit, uniq, values, get } from 'vtils';
 import * as changeCase from 'change-case';
 import {
 	Category,
@@ -29,7 +16,15 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { getCachedPrettierOptions, getPrompt, httpGet, httpPost, sortByWeights, throwError } from './utils';
+import {
+	getCachedPrettierOptions,
+	getMockPrompt,
+	getJSONFixPrompt,
+	httpGet,
+	httpPost,
+	sortByWeights,
+	throwError,
+} from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -84,14 +79,12 @@ export class Generator {
 					);
 					return projects;
 				}, []);
-				console.log('projects: ', projects);
 				return Promise.all(
 					projects.map(async (projectConfig, projectIndex) => {
 						const projectInfo = await this.fetchProjectInfo({
 							...serverConfig,
 							...projectConfig,
 						});
-						console.log('projectInfo: ', projectInfo);
 						await Promise.all(
 							projectConfig.categories.map(async (categoryConfig, categoryIndex) => {
 								// 分类处理
@@ -146,7 +139,7 @@ export class Generator {
 												.filter(Boolean) as any;
 											interfaceList.sort((a, b) => a._id - b._id);
 
-											await this.getMockCode(syntheticalConfig, interfaceList);
+											await this.genMockCode(syntheticalConfig, interfaceList);
 
 											const interfaceCodes = await Promise.all(
 												interfaceList.map<
@@ -159,10 +152,11 @@ export class Generator {
 												>(async (interfaceInfo) => {
 													const outputFilePath = path.resolve(
 														this.options.cwd,
-														typeof syntheticalConfig.outputFilePath === 'function'
-															? syntheticalConfig.outputFilePath(interfaceInfo, changeCase)
-															: syntheticalConfig.outputFilePath!
+														`${interfaceInfo._category.desc}/${changeCase.camelCase(
+															interfaceInfo.path.replace(/^\//, '')
+														)}.ts`
 													);
+													console.log(outputFilePath);
 													const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`;
 
 													const code = await this.generateCode(
@@ -478,37 +472,91 @@ export class Generator {
 	}
 
 	/** 生成 mock 代码 */
-	async getMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
-		const {
-			serverUrl,
-			method = 'POST',
-			maxLength = 8192,
-			headers = {},
-			dataKey = ['data', 'content'],
-		} = syntheticalConfig.gpt!;
+	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
+		const { serverUrl, maxLength = 8192 } = syntheticalConfig.gpt!;
 		if (!serverUrl) throwError('未配置 gpt.serverUrl');
 		const responseBodyList = interfaceList.map((i) => ({
-			res_body: i.res_body,
+			res_body: JSON.parse(i.res_body),
 			id: i._id,
 		}));
-		let input = '';
-		const result = await httpPost(
-			serverUrl,
-			JSON.stringify({
-				messages: [
-					{
-						role: 'system',
-						content: 'You are a mockjs expert.',
-					},
-					{
-						role: 'user',
-						content: getPrompt(''),
-					},
-				],
-			}),
-			{
-				'Content-Type': 'application/json',
+		const inputList: string[] = [];
+		// 剩余长度
+		const surplusLength = maxLength - getMockPrompt('').length;
+		// 输入按长度分组
+		const _inputGroup = () => {
+			const input: Record<number, string> = {};
+			[...responseBodyList].forEach((item, index) => {
+				const _input = JSON.stringify({ ...input, [item.id]: item.res_body });
+				if (_input.length < surplusLength) {
+					input[item.id] = item.res_body;
+					responseBodyList.splice(index, 1);
+				}
+			});
+			Object.keys(input).length && inputList.push(JSON.stringify(input));
+			responseBodyList.length && _inputGroup();
+		};
+		_inputGroup();
+		// console.log('inputList', inputList);
+		// await Promise.all(
+		// 	inputList.map(async (input) => {
+		// 		const result = await this.fetchGptInterface(syntheticalConfig, input);
+		// 		// console.log('result: ', result);
+		// 	})
+		// );
+	}
+
+	/** 请求 gpt 接口 */
+	async fetchGptInterface(syntheticalConfig: SyntheticalConfig, content: string) {
+		const { serverUrl, headers = {}, dataKey = ['data', 'content'] } = syntheticalConfig.gpt!;
+		const response = await _request();
+		const result = await verifyResult(response);
+		return result;
+
+		async function _request() {
+			try {
+				const response = await httpPost<any>(
+					serverUrl,
+					JSON.stringify({
+						messages: [
+							{
+								role: 'system',
+								content: 'You are a mockjs expert.',
+							},
+							{
+								role: 'user',
+								content,
+							},
+						],
+					}),
+					headers
+				);
+				console.log(response);
+				const result: string = get(response, dataKey) || '';
+				return result.trim();
+			} catch {
+				return '';
 			}
-		);
+		}
+		async function verifyResult(result: string) {
+			try {
+				JSON.parse(result);
+				return result;
+			} catch (e) {
+				const response = await httpPost<any>(
+					serverUrl,
+					JSON.stringify({
+						messages: [
+							{
+								role: 'user',
+								content: getJSONFixPrompt(result, String(e)),
+							},
+						],
+					}),
+					headers
+				);
+				const r: string = get(response, dataKey) ?? '';
+				return r.trim();
+			}
+		}
 	}
 }
