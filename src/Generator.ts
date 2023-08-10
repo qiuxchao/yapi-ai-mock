@@ -471,7 +471,7 @@ export class Generator {
 		// 接口元信息
 		const mockConstruction: MockConstruction = {
 			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
-			path: JSON.stringify(extendedInterfaceInfo.path),
+			path: extendedInterfaceInfo.path,
 			method: extendedInterfaceInfo.method,
 			mockCode: extendedInterfaceInfo._mockCode,
 		};
