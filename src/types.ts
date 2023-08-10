@@ -469,7 +469,7 @@ export interface GptConfig {
 	 * gpt 接口地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
 	 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
 	 */
-	serverUrl: string;
+	url?: string;
 
 	/**
 	 * gpt 支持的最大消息字符数
@@ -505,12 +505,23 @@ export interface ServerConfig extends SharedConfig {
 	 *
 	 * @example 'http://yapi.foo.bar'
 	 */
-	serverUrl: string;
+	serverUrl?: string;
 
 	/**
 	 * 项目列表
 	 */
 	projects: ProjectConfig[];
+
+	/**
+	 * .env 文件路径。默认为项目根目录下的 `.env`。
+	 *
+	 * 可以是 `相对路径` 或 `绝对路径`。
+	 *
+	 * 可以在其中配置 `YAPI_SERVER_URL`（yapi 服务地址） 和 `YGM_GPT_URL`（gpt 接口地址）。
+	 *
+	 * @default '.env'
+	 */
+	envPath?: string;
 
 	/**
 	 * mock 目录路径。默认为 `mock`。
@@ -533,12 +544,12 @@ export interface ServerConfig extends SharedConfig {
 	/**
 	 * gpt 配置
 	 */
-	gpt: GptConfig;
+	gpt?: GptConfig;
 
 	/** mock 代码片段 */
-	mockStatement: (mockConstruction: MockConstruction) => string;
+	mockStatement?: (mockConstruction: MockConstruction) => string;
 	/** 引入 mock 代码片段 */
-	mockImportStatement: () => string;
+	mockImportStatement?: () => string;
 }
 
 /** 命令行钩子 */

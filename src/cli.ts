@@ -7,10 +7,6 @@ import ora from 'ora';
 import yargs from 'yargs';
 import { wait } from 'vtils';
 import { Generator } from './Generator';
-import dotenv from 'dotenv';
-
-// TODO: use local .env file.
-dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 TSNode.register({
 	// 不加载本地的 tsconfig.json

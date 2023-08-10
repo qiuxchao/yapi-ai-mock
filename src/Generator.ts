@@ -45,6 +45,7 @@ import path from 'path';
 import dayjs from 'dayjs';
 import prettier from 'prettier';
 import { exec } from 'child_process';
+import dotenv from 'dotenv';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -71,9 +72,20 @@ export class Generator {
 		this.config = await Promise.all(
 			// config 可能是对象或数组，统一为数组
 			this.config.map(async (item) => {
-				if (item.serverUrl) {
-					item.serverUrl = item.serverUrl.replace(/\/+$/, '');
-				}
+				const { envPath } = item;
+				dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
+				const serverUrl = process.env['YAPI_SERVER_URL'] || item?.serverUrl?.replace(/\/+$/, '');
+				const gptUrl = process.env['YGM_GPT_URL'] || item.gpt?.url;
+				if (!serverUrl)
+					throwError('未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段或 env 文件中的 YAPI_SERVER_URL 字段配置');
+				if (!gptUrl)
+					throwError('未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YGM_GPT_URL 字段配置');
+				// 解析 env 中的配置
+				item.serverUrl = serverUrl;
+				item.gpt = {
+					...(item.gpt ?? {}),
+					url: gptUrl,
+				};
 				return item;
 			})
 		);
@@ -495,8 +507,7 @@ export class Generator {
 
 	/** 生成 mock 代码 */
 	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
-		const { serverUrl, maxLength = 8192 } = syntheticalConfig.gpt!;
-		if (!serverUrl) throwError('未配置 gpt.serverUrl');
+		const { maxLength = 8192 } = syntheticalConfig.gpt!;
 		const responseBodyList = interfaceList.map((i) => ({
 			res_body: JSON.parse(i.res_body),
 			id: i._id,
@@ -529,7 +540,7 @@ export class Generator {
 
 	/** 请求 gpt 接口 */
 	async fetchGptInterface(syntheticalConfig: SyntheticalConfig, content: string) {
-		const { serverUrl, headers = {}, dataKey = ['data', 'content'] } = syntheticalConfig.gpt!;
+		const { url = '', headers = {}, dataKey = ['data', 'content'] } = syntheticalConfig.gpt!;
 		const response = await _request();
 		const result = await verifyResult(response);
 		return result;
@@ -537,7 +548,7 @@ export class Generator {
 		async function _request() {
 			try {
 				const response = await httpPost<any>(
-					serverUrl,
+					url,
 					JSON.stringify({
 						messages: [
 							{
@@ -565,7 +576,7 @@ export class Generator {
 				return result;
 			} catch (e) {
 				const response = await httpPost<any>(
-					serverUrl,
+					url,
 					JSON.stringify({
 						messages: [
 							{
