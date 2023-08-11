@@ -28,7 +28,7 @@ const chat = async (gptUrl: string, question: string) => {
 			}
 		},
 	};
-	const schema = fs.readFileSync(path.join(__dirname, 'sentimentSchema.ts'), 'utf8');
+	const schema = fs.readFileSync(path.join(__dirname, 'mockSchema.ts'), 'utf8');
 	const translator = createJsonTranslator<MockResponse>(model, schema, 'MockResponse');
 	const response = await translator.translate(question);
 	if (!response.success) {
