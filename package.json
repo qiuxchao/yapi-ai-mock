@@ -19,12 +19,14 @@
 	},
 	"scripts": {
 		"build": "unbuild",
-		"dev": "chokidar \"src/*.ts\" -c \"pnpm build\""
+		"stub": "unbuild --stub",
+		"dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\""
 	},
 	"exports": {
 		".": {
 			"types": "./lib/index.d.ts",
-			"default": "./lib/index.cjs"
+			"default": "./lib/index.cjs",
+			"require": "./lib/index.cjs"
 		}
 	},
 	"author": "",
