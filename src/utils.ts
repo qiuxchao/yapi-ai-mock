@@ -1,5 +1,5 @@
 import nodeFetch, { BodyInit } from 'node-fetch';
-import { indent, memoize, run } from 'vtils';
+import { indent, isObject, memoize, run } from 'vtils';
 import prettier from 'prettier';
 
 /**
@@ -131,3 +131,35 @@ Parsed Error Message:
 ${error}
 Revised JSON String:
 `;
+
+/** 递归删除对象中指定的key */
+export const removeProperty = (obj: Record<string, any>, prop: string | string[]) => {
+	if (!isObject(obj)) {
+		return obj;
+	}
+	if (Array.isArray(prop)) {
+		prop.forEach((p) => {
+			delete obj[p];
+		});
+	} else {
+		delete obj[prop];
+	}
+	Object.keys(obj).forEach((key) => {
+		removeProperty(obj[key], prop);
+	});
+	return obj;
+};
+
+/** 将对象中不符合 `{['type']: string}` 并且字段名不为 `properties` | `type` | `description` 的字段删除 */
+export const removeInvalidProperty = (obj: Record<string, any>) => {
+	if (!isObject(obj)) {
+		return obj;
+	}
+	Object.keys(obj).forEach((key) => {
+		if (!['properties', 'type', 'description'].includes(key) && !obj[key]?.type) {
+			delete obj[key];
+		}
+		removeInvalidProperty(obj[key]);
+	});
+	return obj;
+};

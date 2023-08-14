@@ -23,7 +23,7 @@ const chat = async (gptUrl: string, question: string) => {
 				const json = await response.json();
 				return success(json.data.content as string);
 			} catch (err) {
-				consola.error(err);
+				consola.error('mock 请求错误: ', err);
 				return error('请求错误');
 			}
 		},
@@ -33,9 +33,8 @@ const chat = async (gptUrl: string, question: string) => {
 	const response = await translator.translate(question);
 	if (!response.success) {
 		consola.error(response.message);
-		return '';
+		return {};
 	}
-	consola.success(`result ${response.data}`);
 	return response.data;
 };
 

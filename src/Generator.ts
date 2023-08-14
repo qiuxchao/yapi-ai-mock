@@ -1,19 +1,4 @@
-import {
-	castArray,
-	dedent,
-	groupBy,
-	isEmpty,
-	last,
-	memoize,
-	noop,
-	omit,
-	uniq,
-	values,
-	get,
-	isFunction,
-	indent,
-	cloneDeepFast,
-} from 'vtils';
+import { castArray, dedent, isEmpty, memoize, noop, omit, uniq, get, isFunction, indent, cloneDeepFast } from 'vtils';
 import * as changeCase from 'change-case';
 import {
 	Category,
@@ -39,6 +24,8 @@ import {
 	httpPost,
 	sortByWeights,
 	throwError,
+	removeProperty,
+	removeInvalidProperty,
 } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
@@ -46,6 +33,8 @@ import dayjs from 'dayjs';
 import prettier from 'prettier';
 import { exec } from 'child_process';
 import dotenv from 'dotenv';
+import chat from './chat';
+import consola from 'consola';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -174,7 +163,6 @@ export class Generator {
 											interfaceList.sort((a, b) => a._id - b._id);
 
 											await this.genMockCode(syntheticalConfig, interfaceList);
-
 											const interfaceCodes = await Promise.all(
 												interfaceList.map<
 													Promise<{
@@ -496,9 +484,9 @@ export class Generator {
 			export default defineMock({
 				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
 				method: '${mockConstruction.method}',
-				body: mockjs.mock({
-					data: 'mock 代码放在这里'
-				}),
+				body: mockjs.mock(
+					${mockConstruction.mockCode || '{}'}
+				),
 			});
 		`;
 
@@ -508,10 +496,22 @@ export class Generator {
 	/** 生成 mock 代码 */
 	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
 		const { maxLength = 8192 } = syntheticalConfig.gpt!;
-		const responseBodyList = interfaceList.map((i) => ({
-			res_body: JSON.parse(i.res_body),
-			id: i._id,
-		}));
+		const responseBodyList = interfaceList
+			.map((i) => {
+				try {
+					const parsedResBody = JSON.parse(i.res_body);
+					// 过滤掉 `res_body` 中的 `$schema` 和 `required` 字段
+					removeInvalidProperty(parsedResBody);
+					return {
+						res_body: parsedResBody,
+						id: i._id,
+					};
+				} catch (e) {
+					consola.warn(`接口 ${i.path} 的 res_body 不是合法的 JSON 字符串，已忽略`);
+					return false;
+				}
+			})
+			.filter(Boolean) as { res_body: any; id: number }[];
 		const inputList: string[] = [];
 		// 剩余长度
 		const surplusLength = maxLength - getMockPrompt('').length;
@@ -529,67 +529,17 @@ export class Generator {
 			responseBodyList.length && _inputGroup();
 		};
 		_inputGroup();
-		// console.log('inputList', inputList);
-		// await Promise.all(
-		// 	inputList.map(async (input) => {
-		// 		const result = await this.fetchGptInterface(syntheticalConfig, input);
-		// 		// console.log('result: ', result);
-		// 	})
-		// );
-	}
-
-	/** 请求 gpt 接口 */
-	async fetchGptInterface(syntheticalConfig: SyntheticalConfig, content: string) {
-		const { url = '', headers = {}, dataKey = ['data', 'content'] } = syntheticalConfig.gpt!;
-		const response = await _request();
-		const result = await verifyResult(response);
-		return result;
-
-		async function _request() {
-			try {
-				const response = await httpPost<any>(
-					url,
-					JSON.stringify({
-						messages: [
-							{
-								role: 'system',
-								content: 'You are a mockjs expert.',
-							},
-							{
-								role: 'user',
-								content,
-							},
-						],
-					}),
-					headers
-				);
-				console.log(response);
-				const result: string = get(response, dataKey) || '';
-				return result.trim();
-			} catch {
-				return '';
-			}
-		}
-		async function verifyResult(result: string) {
-			try {
-				JSON.parse(result);
-				return result;
-			} catch (e) {
-				const response = await httpPost<any>(
-					url,
-					JSON.stringify({
-						messages: [
-							{
-								role: 'user',
-								content: getJSONFixPrompt(result, String(e)),
-							},
-						],
-					}),
-					headers
-				);
-				const r: string = get(response, dataKey) ?? '';
-				return r.trim();
-			}
-		}
+		console.log('inputList', inputList);
+		await Promise.all(
+			inputList.map(async (input) => {
+				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
+				Object.keys(mockResult).forEach((id) => {
+					const interfaceInfo = interfaceList.find((i) => i._id === Number(id));
+					if (interfaceInfo) {
+						interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
+					}
+				});
+			})
+		);
 	}
 }
