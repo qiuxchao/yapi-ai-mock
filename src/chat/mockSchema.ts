@@ -15,6 +15,7 @@ export interface ResponseBodyType {
 	// default 'success'
 	message: string;
 	// default null
-	// if it has currentPage field, its value is 1
+	// If it has currentPage field, its value is 1
+	// If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
 	data: any;
 }
