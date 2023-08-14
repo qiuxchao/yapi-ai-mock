@@ -11,30 +11,3 @@
 '{"1468":{"code":200,"message":"success","data":{"list|10-20":[{"id|1-100":1,"orderNo":"@word(10, 20)","parentOrderNo":"@word(10, 20)","msgContent":"@csentence(10, 20)","itemTitle":"@ctitle(5, 10)","consigneeName":"@cname()","consigneeMobile":"@integer(10000000000, 19999999999)","consigneeAddress":"@county(true)","groupLeaderName":"@cname()","groupLeaderWxGroupRelation":"@word(5, 10)","companyName":"@ctitle(5, 10)","supplierWxGroupRelation":"@word(5, 10)","operatorName":"@cname()","processingStatus|1-2":1,"createTime":"@datetime","updateTime":"@datetime"}],"endPage":true,"totalCount|100-200":100,"currentPage":1}}}'
 
 ```
-
-## json
-
-```
-You are a professional JSON parser.
-
-Example:
-
-Origin JSON String:
-{"1384":{"code":200,"message":"success","data|10-20":[{"itemCategoryId|1-100":1,"itemCateGoryName":"@ctitle(2, 5)"}]}}}
-
-Parsed Error Message:
-SyntaxError: Unexpected non-whitespace character after JSON at position 118
-
-Revised JSON String:
-{"1384":{"code":200,"message":"success","data|10-20":[{"itemCategoryId|1-100":1,"itemCateGoryName":"@ctitle(2, 5)"}]}}
-
-Prompt:
-
-Origin JSON String:
-
-
-Parsed Error Message:
-
-
-Revised JSON String:
-```

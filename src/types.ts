@@ -177,6 +177,8 @@ export interface Interface {
 	_url: string;
 	/** 接口的 Mock 代码（自行实现） */
 	_mockCode: string;
+	/** 输入代码路径（自行实现） */
+	_outputFilePath: string;
 	/** 接口名称 */
 	title: string;
 	/** 状态 */

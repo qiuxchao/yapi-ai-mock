@@ -15,7 +15,7 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { getCachedPrettierOptions, httpGet, sortByWeights, throwError, removeInvalidProperty } from './utils';
+import { getCachedPrettierOptions, httpGet, throwError, removeInvalidProperty } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -24,6 +24,7 @@ import { exec } from 'child_process';
 import dotenv from 'dotenv';
 import chat from './chat';
 import consola from 'consola';
+import { Ora } from 'ora';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -36,6 +37,10 @@ interface OutputFileList {
 export class Generator {
 	/** 配置 */
 	private config: ServerConfig[] = [];
+	/** 总任务数 */
+	private total: number = 0;
+	/** 完成的任务数 */
+	private completed: number = 0;
 
 	constructor(
 		config: Config,
@@ -69,10 +74,8 @@ export class Generator {
 		);
 	}
 
-	/** 生成 mock 配置，返回 */
-	async generate(): Promise<OutputFileList> {
-		const outputFileList: OutputFileList = Object.create(null);
-
+	/** 生成 */
+	async generate(spinner: Ora): Promise<void> {
 		await Promise.all(
 			this.config.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
@@ -109,98 +112,77 @@ export class Generator {
 								// 顺序化
 								categoryIds = categoryIds.sort();
 
-								const codes = (
-									await Promise.all(
-										categoryIds.map<
-											Promise<
-												Array<{
-													outputFilePath: string;
-													code: string;
-													weights: number[];
-												}>
-											>
-										>(async (id, categoryIndex2) => {
-											categoryConfig = {
-												...categoryConfig,
-												id: id,
-											};
-											const syntheticalConfig: SyntheticalConfig = {
-												...serverConfig,
-												...projectConfig,
-												...categoryConfig,
-											};
-											syntheticalConfig.target = syntheticalConfig.target || 'typescript';
+								await Promise.all(
+									categoryIds.map<Promise<void>>(async (id, categoryIndex2) => {
+										categoryConfig = {
+											...categoryConfig,
+											id: id,
+										};
+										const outputFileList: OutputFileList = Object.create(null);
+										const syntheticalConfig: SyntheticalConfig = {
+											...serverConfig,
+											...projectConfig,
+											...categoryConfig,
+										};
+										syntheticalConfig.target = syntheticalConfig.target || 'typescript';
 
-											// 接口列表
-											let interfaceList = await this.fetchInterfaceList(syntheticalConfig);
+										// 接口列表
+										let interfaceList = await this.fetchInterfaceList(syntheticalConfig);
 
-											interfaceList = interfaceList
-												.map((interfaceInfo) => {
-													// 实现 _project 字段
-													interfaceInfo._project = omit(projectInfo, ['cats']);
-													// 预处理
-													const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
-														? syntheticalConfig.preproccessInterface(
-																cloneDeepFast(interfaceInfo),
-																changeCase,
-																syntheticalConfig
-														  )
-														: interfaceInfo;
-													return _interfaceInfo;
-												})
-												.filter(Boolean) as any;
-											interfaceList.sort((a, b) => a._id - b._id);
+										interfaceList = interfaceList
+											.map((interfaceInfo) => {
+												// 实现 _project 字段
+												interfaceInfo._project = omit(projectInfo, ['cats']);
+												// 实现 _outputFilePath 字段
+												const [_, projectName, categoryName, ...interfacePath] = interfaceInfo.path.split('/');
+												interfaceInfo._outputFilePath = path.resolve(
+													this.options.cwd,
+													`${syntheticalConfig.mockDir || 'mock'}/${changeCase.camelCase(
+														`${projectName}-${categoryName}`
+													)}${interfacePath.length ? `/${changeCase.camelCase(interfacePath.join(''))}` : ''}.ts`
+												);
+												// 预处理
+												const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
+													? syntheticalConfig.preproccessInterface(
+															cloneDeepFast(interfaceInfo),
+															changeCase,
+															syntheticalConfig
+													  )
+													: interfaceInfo;
+												return _interfaceInfo;
+											})
+											.filter(Boolean) as any;
+										interfaceList.sort((a, b) => a._id - b._id);
+										this.total += interfaceList.length;
 
-											await this.genMockCode(syntheticalConfig, interfaceList);
-											const interfaceCodes = await Promise.all(
-												interfaceList.map<
-													Promise<{
-														outputFilePath: string;
-														weights: number[];
-														code: string;
-														interfaceInfo: Interface;
-													}>
-												>(async (interfaceInfo) => {
-													const outputFilePath = path.resolve(
-														this.options.cwd,
-														`${syntheticalConfig.mockDir || 'mock'}/${
-															interfaceInfo._category.desc
-														}/${changeCase.camelCase(interfaceInfo.path.replace(/^\//, ''))}.ts`
-													);
+										/** 实现 _mockCode 字段 */
+										await this.genMockCode(syntheticalConfig, interfaceList);
 
-													const code = await this.generateCode(
-														syntheticalConfig,
-														interfaceInfo
-														// categoryUID,
-													);
-													const weights: number[] = [serverIndex, projectIndex, categoryIndex, categoryIndex2];
+										await Promise.all(
+											interfaceList.map<Promise<void>>(async (interfaceInfo) => {
+												const { _outputFilePath } = interfaceInfo;
+												const code = await this.generateCode(syntheticalConfig, interfaceInfo);
 
-													outputFileList[outputFilePath] = {
-														syntheticalConfig,
-														content: [code],
-													};
+												outputFileList[_outputFilePath] = {
+													syntheticalConfig,
+													content: [code],
+												};
+											})
+										);
 
-													return {
-														outputFilePath,
-														weights,
-														code,
-														interfaceInfo,
-													};
-												})
-											);
-
-											return sortByWeights(interfaceCodes);
-										})
-									)
-								).flat();
+										/** 写入文件 */
+										await this.write(outputFileList);
+										this.completed += interfaceList.length;
+										spinner.color = 'yellow';
+										spinner.text = `正在获取数据并生成代码... (已完成: ${this.completed}/${this.total})`;
+									})
+								);
 							})
 						);
 					})
 				);
 			})
 		);
-
-		return outputFileList;
 	}
 
 	/** 写入文件 */
