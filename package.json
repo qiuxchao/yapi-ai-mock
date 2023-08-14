@@ -20,7 +20,8 @@
 	"scripts": {
 		"build": "unbuild",
 		"stub": "unbuild --stub",
-		"dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\""
+		"dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\"",
+		"typecheck": "tsc --noEmit"
 	},
 	"exports": {
 		".": {

@@ -2,11 +2,11 @@ import path from 'path';
 import fs from 'fs-extra';
 import consola from 'consola';
 import TSNode from 'ts-node';
-import { ConfigWithHooks } from './types';
+import { ConfigWithHooks } from '@/types';
 import ora from 'ora';
 import yargs from 'yargs';
 import { wait } from 'vtils';
-import { Generator } from './Generator';
+import { Generator } from '@/Generator';
 
 TSNode.register({
 	// 不加载本地的 tsconfig.json
@@ -30,7 +30,7 @@ TSNode.register({
 	},
 });
 
-export default async function ygm(config: ConfigWithHooks) {
+const ygm = async (config: ConfigWithHooks) => {
 	const generator = new Generator(config);
 	let spinner = ora('正在获取数据并生成代码...').start();
 	try {
@@ -54,14 +54,14 @@ export default async function ygm(config: ConfigWithHooks) {
 		consola.error(err);
 	}
 	await config?.hooks?.complete?.();
-}
+};
 
-export async function run(
+const run = async (
 	cmd: string | undefined,
 	options?: {
 		configFile?: string;
 	}
-) {
+) => {
 	let useCustomConfigFile = false;
 	let cwd!: string;
 	let configTSFile!: string;
@@ -89,9 +89,8 @@ export async function run(
 	}
 	consola.success(`找到配置文件: ${configFile}`);
 	const config: ConfigWithHooks = require(configFile).default;
-	console.log(config);
 	await ygm(config);
-}
+};
 
 if (require.main === module) {
 	const argv = yargs(process.argv).alias('c', 'config').argv;
@@ -100,3 +99,5 @@ if (require.main === module) {
 		configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
 	});
 }
+
+export default ygm;

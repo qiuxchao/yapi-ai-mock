@@ -15,5 +15,6 @@ export interface ResponseBodyType {
 	// default 'success'
 	message: string;
 	// default null
+	// if it has currentPage field, its value is 1
 	data: any;
 }

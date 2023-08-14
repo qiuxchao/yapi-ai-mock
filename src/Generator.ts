@@ -9,24 +9,13 @@ import {
 	ExtendedInterface,
 	Interface,
 	InterfaceList,
-	Method,
 	MockConstruction,
 	Project,
 	ProjectConfig,
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import {
-	getCachedPrettierOptions,
-	getMockPrompt,
-	getJSONFixPrompt,
-	httpGet,
-	httpPost,
-	sortByWeights,
-	throwError,
-	removeProperty,
-	removeInvalidProperty,
-} from './utils';
+import { getCachedPrettierOptions, httpGet, sortByWeights, throwError, removeInvalidProperty } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -233,7 +222,7 @@ export class Generator {
 						syntheticalConfig?.mockImportStatement?.() ??
 						`
 					import mockjs from 'mockjs';
-					import { defineMock } from 'vite-plugin-mock-dev-server';
+					import { defineMock } from 'yapi-gpt-mock';
 					`
 					}
        
@@ -514,7 +503,7 @@ export class Generator {
 			.filter(Boolean) as { res_body: any; id: number }[];
 		const inputList: string[] = [];
 		// 剩余长度
-		const surplusLength = maxLength - getMockPrompt('').length;
+		const surplusLength = maxLength - 500;
 		// 输入按长度分组
 		const _inputGroup = () => {
 			const input: Record<number, string> = {};
@@ -529,7 +518,6 @@ export class Generator {
 			responseBodyList.length && _inputGroup();
 		};
 		_inputGroup();
-		console.log('inputList', inputList);
 		await Promise.all(
 			inputList.map(async (input) => {
 				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
