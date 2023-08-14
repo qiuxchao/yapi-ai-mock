@@ -4,17 +4,13 @@
 
 可配置的项：
 
-- [ ] gpt 接口（支持配置到 env 里）
-- [ ] gpt 请求头 请求体
+- [x] gpt 接口（支持配置到 env 里）
 - [ ] gpt 支持的最大消息字符数
-- [ ] YAPI 域名
-- [ ] YAPI 项目 token 排除的分类 id
-- [ ] YAPI 生成模式 全量生成 or 只生成未完成的接口
-- [ ] mockjs 配置代码 目录
-- [ ] mockjs 配置代码 文件名后缀
-- [ ] mockjs 配置代码 文件头部内容
-- [ ] mockjs 配置代码 文件尾部内容
-- [ ] mockjs 配置代码 接口前缀 默认 /mock
+- [x] YAPI 域名（支持配置到 env 里）
+- [x] YAPI 项目 token 排除的分类 id
+- [x] mockjs 配置代码 目录
+- [x] mockjs 配置代码 文件头部内容
+- [x] mockjs 配置代码 接口前缀 默认 /mock
 
 要实现的功能：
 
