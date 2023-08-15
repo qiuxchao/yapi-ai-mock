@@ -32,22 +32,25 @@ TSNode.register({
 
 const ygm = async (config: ConfigWithHooks) => {
 	const generator = new Generator(config);
-	let spinner = ora('正在获取数据并生成代码...').start();
+	const spinner1 = ora('正在读取并解析配置文件...').start();
 	try {
+		await generator.prepare();
+		spinner1.text = '正在获取并解析接口数据...';
 		const delayNotice = wait(5000);
 		delayNotice.then(() => {
-			spinner!.text = `正在获取数据并生成代码... (若长时间处于此状态，请检查是否有接口定义的数据过大导致拉取或解析缓慢)`;
+			spinner1!.text = `正在获取并解析接口数据... (若长时间处于此状态，请检查是否有接口定义的数据过大导致拉取或解析缓慢)`;
 		});
-		await generator.prepare();
+		await generator.resolve();
 		delayNotice.cancel();
-
-		await generator.generate(spinner);
-		spinner.stop();
-		consola.success('获取数据并生成代码完毕');
-		consola.success('写入文件完毕');
+		spinner1.stop();
+		consola.success('接口数据获取并解析完毕');
+		const spinner2 = ora('正在生成代码并写入文件...').start();
+		await generator.generate(spinner2);
+		spinner2.stop();
+		consola.success('全部文件写入完毕');
 		await config!.hooks?.success?.();
 	} catch (err) {
-		spinner?.stop();
+		spinner1?.stop();
 		await config?.hooks?.fail?.();
 		consola.error(err);
 	}

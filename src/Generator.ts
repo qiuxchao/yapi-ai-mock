@@ -1,4 +1,16 @@
-import { castArray, dedent, isEmpty, memoize, noop, omit, uniq, get, isFunction, indent, cloneDeepFast } from 'vtils';
+import {
+	castArray,
+	dedent,
+	isEmpty,
+	memoize,
+	noop,
+	omit,
+	uniq,
+	isFunction,
+	indent,
+	cloneDeepFast,
+	groupBy,
+} from 'vtils';
 import * as changeCase from 'change-case';
 import {
 	Category,
@@ -25,6 +37,7 @@ import dotenv from 'dotenv';
 import chat from './chat';
 import consola from 'consola';
 import { Ora } from 'ora';
+import { SHA256 } from 'crypto-js';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -41,6 +54,8 @@ export class Generator {
 	private total: number = 0;
 	/** 完成的任务数 */
 	private completed: number = 0;
+	/** 接口列表 */
+	private interfaceList: { syntheticalConfig: SyntheticalConfig; interfaceInfo: Interface }[] = [];
 
 	constructor(
 		config: Config,
@@ -74,8 +89,12 @@ export class Generator {
 		);
 	}
 
-	/** 生成 */
-	async generate(spinner: Ora): Promise<void> {
+	/** 拉取并解析接口数据 */
+	async resolve(): Promise<void> {
+		const allInterfaceList: {
+			syntheticalConfig: SyntheticalConfig;
+			interfaceInfo: Interface;
+		}[] = [];
 		await Promise.all(
 			this.config.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
@@ -118,7 +137,6 @@ export class Generator {
 											...categoryConfig,
 											id: id,
 										};
-										const outputFileList: OutputFileList = Object.create(null);
 										const syntheticalConfig: SyntheticalConfig = {
 											...serverConfig,
 											...projectConfig,
@@ -141,6 +159,26 @@ export class Generator {
 														`${projectName}-${categoryName}`
 													)}${interfacePath.length ? `/${changeCase.camelCase(interfacePath.join(''))}` : ''}.ts`
 												);
+												// 对接口返回数据进行解析处理，如果无法解析，则忽略该接口
+												try {
+													const parsedResBody = JSON.parse(interfaceInfo.res_body);
+													// 过滤掉 `res_body` 中的 `$schema` 和 `required` 字段
+													removeInvalidProperty(parsedResBody);
+													interfaceInfo._parsedResBody = parsedResBody;
+												} catch (e) {
+													consola.warn(`接口 ${interfaceInfo.path} 的 res_body 不是合法的 JSON 字符串，已忽略`);
+													return false;
+												}
+												// 根据 res_body 生成 hash，用来防止重新生成
+												interfaceInfo._hash = SHA256(interfaceInfo.res_body).toString();
+												// 判断是否需要重新生成
+												if (fs.existsSync(interfaceInfo._outputFilePath)) {
+													const content = fs.readFileSync(interfaceInfo._outputFilePath, 'utf8');
+													const match = content.match(/\/\* hash: ([^\*]+) \*\//);
+													if (match && match[1] === interfaceInfo._hash) {
+														return false;
+													}
+												}
 												// 预处理
 												const _interfaceInfo = isFunction(syntheticalConfig.preproccessInterface)
 													? syntheticalConfig.preproccessInterface(
@@ -153,34 +191,202 @@ export class Generator {
 											})
 											.filter(Boolean) as any;
 										interfaceList.sort((a, b) => a._id - b._id);
-										this.total += interfaceList.length;
-
-										/** 实现 _mockCode 字段 */
-										await this.genMockCode(syntheticalConfig, interfaceList);
-
-										await Promise.all(
-											interfaceList.map<Promise<void>>(async (interfaceInfo) => {
-												const { _outputFilePath } = interfaceInfo;
-												const code = await this.generateCode(syntheticalConfig, interfaceInfo);
-
-												outputFileList[_outputFilePath] = {
-													syntheticalConfig,
-													content: [code],
-												};
-											})
+										allInterfaceList.push(
+											...interfaceList.map((interfaceInfo) => ({
+												syntheticalConfig,
+												interfaceInfo,
+											}))
 										);
-
-										/** 写入文件 */
-										await this.write(outputFileList);
-										this.completed += interfaceList.length;
-										spinner.color = 'yellow';
-										spinner.text = `正在获取数据并生成代码... (已完成: ${this.completed}/${this.total})`;
 									})
 								);
 							})
 						);
 					})
 				);
+			})
+		);
+		this.interfaceList = allInterfaceList;
+		this.total = allInterfaceList.length;
+	}
+
+	/** 生成 */
+	async generate(spinner: Ora): Promise<void> {
+		// 根据 `gpt.url` 对所有接口进行分组
+		const interfaceListGrouyByGptUrl = groupBy(this.interfaceList, (item) => item.syntheticalConfig.gpt?.url);
+		await Promise.all(
+			Object.keys(interfaceListGrouyByGptUrl).map(async (gptUrl) => {
+				const interfaceList = interfaceListGrouyByGptUrl[gptUrl];
+				await this.genMockCode(
+					interfaceList[0].syntheticalConfig,
+					interfaceList.map((item) => item.interfaceInfo),
+					spinner
+				);
+			})
+		);
+	}
+
+	/** 生成文件代码 */
+	async generateCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
+		const extendedInterfaceInfo: ExtendedInterface = {
+			...interfaceInfo,
+			parsedPath: path.parse(interfaceInfo.path),
+		};
+
+		// 接口注释
+		const genComment = (genTitle: (title: string) => string) => {
+			const {
+				enabled: isEnabled = true,
+				title: hasTitle = true,
+				category: hasCategory = true,
+				tag: hasTag = true,
+				requestHeader: hasRequestHeader = true,
+				updateTime: hasUpdateTime = true,
+				link: hasLink = true,
+				extraTags,
+			} = {
+				...syntheticalConfig.comment,
+			} as CommentConfig;
+			if (!isEnabled) {
+				return '';
+			}
+			// 转义标题中的 /
+			const escapedTitle = String(extendedInterfaceInfo.title).replace(/\//g, '\\/');
+			const description = hasLink ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})` : escapedTitle;
+			const summary: Array<
+				| false
+				| {
+						label: string;
+						value: string | string[];
+				  }
+			> = [
+				hasCategory && {
+					label: '分类',
+					value: hasLink
+						? `[${extendedInterfaceInfo._category.name}↗](${extendedInterfaceInfo._category._url})`
+						: extendedInterfaceInfo._category.name,
+				},
+				hasTag && {
+					label: '标签',
+					value: extendedInterfaceInfo.tag.map((tag) => `\`${tag}\``),
+				},
+				hasRequestHeader && {
+					label: '请求头',
+					value: `\`${extendedInterfaceInfo.method.toUpperCase()} ${extendedInterfaceInfo.path}\``,
+				},
+				hasUpdateTime && {
+					label: '更新时间',
+					value: process.env.JEST_WORKER_ID // 测试时使用 unix 时间戳
+						? String(extendedInterfaceInfo.up_time)
+						: /* istanbul ignore next */
+						  `\`${dayjs(extendedInterfaceInfo.up_time * 1000).format('YYYY-MM-DD HH:mm:ss')}\``,
+				},
+			];
+			if (typeof extraTags === 'function') {
+				const tags = extraTags(extendedInterfaceInfo);
+				for (const tag of tags) {
+					(tag.position === 'start' ? summary.unshift : summary.push).call(summary, {
+						label: tag.name,
+						value: tag.value,
+					});
+				}
+			}
+			const titleComment = hasTitle
+				? dedent`
+            * ${genTitle(description)}
+            *
+          `
+				: '';
+			const extraComment: string = summary
+				.filter((item) => typeof item !== 'boolean' && !isEmpty(item.value))
+				.map((item) => {
+					const _item: Exclude<(typeof summary)[0], boolean> = item as any;
+					return `* @${_item.label} ${castArray(_item.value).join(', ')}`;
+				})
+				.join('\n');
+			return dedent`
+        /**
+         ${[titleComment, extraComment].filter(Boolean).join('\n')}
+         */
+      `;
+		};
+
+		// 接口元信息
+		const mockConstruction: MockConstruction = {
+			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
+			path: extendedInterfaceInfo.path,
+			method: extendedInterfaceInfo.method,
+			mockCode: extendedInterfaceInfo._mockCode,
+			hash: extendedInterfaceInfo._hash,
+		};
+
+		// 通过配置文件中的 `mockStatement` 方法来生成 mock 代码
+		const code = isFunction(syntheticalConfig.mockStatement)
+			? syntheticalConfig.mockStatement(mockConstruction)
+			: indent`
+			/* hash: ${mockConstruction.hash} */
+
+			${mockConstruction.comment}
+			export default defineMock({
+				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
+				method: '${mockConstruction.method}',
+				body: mockjs.mock(
+					${mockConstruction.mockCode || '{}'}
+				),
+			});
+		`;
+
+		return code;
+	}
+
+	/** 生成 mock 代码 */
+	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList, spinner: Ora) {
+		const { maxLength = 4096 } = syntheticalConfig.gpt!;
+		const responseBodyList = interfaceList.map((i) => ({ id: i._id, res_body: i._parsedResBody }));
+		const inputList: string[] = [];
+		// 剩余长度
+		const surplusLength = maxLength - 1000;
+		// 输入按长度分组
+		const _inputGroup = () => {
+			const input: Record<number, object> = {};
+			[...responseBodyList].forEach((item, index) => {
+				const _input = JSON.stringify({ ...input, [item.id]: item.res_body });
+				if (_input.length < surplusLength) {
+					input[item.id] = item.res_body;
+					responseBodyList.splice(
+						responseBodyList.findIndex((i) => i.id === item.id),
+						1
+					);
+				}
+			});
+			Object.keys(input).length && inputList.push(JSON.stringify(input));
+			responseBodyList.length && _inputGroup();
+		};
+		_inputGroup();
+		// 根据分组的输入，获取 mock 代码
+		await Promise.all(
+			inputList.map(async (input) => {
+				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
+				const outputFileList: OutputFileList = Object.create(null);
+				// 生成代码
+				await Promise.all(
+					Object.keys(mockResult).map(async (id) => {
+						const interfaceInfo = interfaceList.find((i) => i._id === Number(id));
+						if (interfaceInfo) {
+							interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
+							const code = await this.generateCode(syntheticalConfig, interfaceInfo);
+							outputFileList[interfaceInfo._outputFilePath] = {
+								syntheticalConfig,
+								content: [code],
+							};
+						}
+					})
+				);
+				// 写入文件
+				await this.write(outputFileList);
+				// 更新进度
+				this.completed += Object.keys(mockResult).length;
+				spinner.color = 'yellow';
+				spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
 			})
 		);
 	}
@@ -352,164 +558,5 @@ export class Generator {
 		}
 
 		return category ? category.list : [];
-	}
-
-	/** 生成代码 */
-	async generateCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
-		const extendedInterfaceInfo: ExtendedInterface = {
-			...interfaceInfo,
-			parsedPath: path.parse(interfaceInfo.path),
-		};
-
-		// 接口注释
-		const genComment = (genTitle: (title: string) => string) => {
-			const {
-				enabled: isEnabled = true,
-				title: hasTitle = true,
-				category: hasCategory = true,
-				tag: hasTag = true,
-				requestHeader: hasRequestHeader = true,
-				updateTime: hasUpdateTime = true,
-				link: hasLink = true,
-				extraTags,
-			} = {
-				...syntheticalConfig.comment,
-			} as CommentConfig;
-			if (!isEnabled) {
-				return '';
-			}
-			// 转义标题中的 /
-			const escapedTitle = String(extendedInterfaceInfo.title).replace(/\//g, '\\/');
-			const description = hasLink ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})` : escapedTitle;
-			const summary: Array<
-				| false
-				| {
-						label: string;
-						value: string | string[];
-				  }
-			> = [
-				hasCategory && {
-					label: '分类',
-					value: hasLink
-						? `[${extendedInterfaceInfo._category.name}↗](${extendedInterfaceInfo._category._url})`
-						: extendedInterfaceInfo._category.name,
-				},
-				hasTag && {
-					label: '标签',
-					value: extendedInterfaceInfo.tag.map((tag) => `\`${tag}\``),
-				},
-				hasRequestHeader && {
-					label: '请求头',
-					value: `\`${extendedInterfaceInfo.method.toUpperCase()} ${extendedInterfaceInfo.path}\``,
-				},
-				hasUpdateTime && {
-					label: '更新时间',
-					value: process.env.JEST_WORKER_ID // 测试时使用 unix 时间戳
-						? String(extendedInterfaceInfo.up_time)
-						: /* istanbul ignore next */
-						  `\`${dayjs(extendedInterfaceInfo.up_time * 1000).format('YYYY-MM-DD HH:mm:ss')}\``,
-				},
-			];
-			if (typeof extraTags === 'function') {
-				const tags = extraTags(extendedInterfaceInfo);
-				for (const tag of tags) {
-					(tag.position === 'start' ? summary.unshift : summary.push).call(summary, {
-						label: tag.name,
-						value: tag.value,
-					});
-				}
-			}
-			const titleComment = hasTitle
-				? dedent`
-            * ${genTitle(description)}
-            *
-          `
-				: '';
-			const extraComment: string = summary
-				.filter((item) => typeof item !== 'boolean' && !isEmpty(item.value))
-				.map((item) => {
-					const _item: Exclude<(typeof summary)[0], boolean> = item as any;
-					return `* @${_item.label} ${castArray(_item.value).join(', ')}`;
-				})
-				.join('\n');
-			return dedent`
-        /**
-         ${[titleComment, extraComment].filter(Boolean).join('\n')}
-         */
-      `;
-		};
-
-		// 接口元信息
-		const mockConstruction: MockConstruction = {
-			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
-			path: extendedInterfaceInfo.path,
-			method: extendedInterfaceInfo.method,
-			mockCode: extendedInterfaceInfo._mockCode,
-		};
-
-		// 通过配置文件中的 `mockStatement` 方法来生成 mock 代码
-		const code = isFunction(syntheticalConfig.mockStatement)
-			? syntheticalConfig.mockStatement(mockConstruction)
-			: indent`
-			${mockConstruction.comment}
-			export default defineMock({
-				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
-				method: '${mockConstruction.method}',
-				body: mockjs.mock(
-					${mockConstruction.mockCode || '{}'}
-				),
-			});
-		`;
-
-		return code;
-	}
-
-	/** 生成 mock 代码 */
-	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList) {
-		const { maxLength = 8192 } = syntheticalConfig.gpt!;
-		const responseBodyList = interfaceList
-			.map((i) => {
-				try {
-					const parsedResBody = JSON.parse(i.res_body);
-					// 过滤掉 `res_body` 中的 `$schema` 和 `required` 字段
-					removeInvalidProperty(parsedResBody);
-					return {
-						res_body: parsedResBody,
-						id: i._id,
-					};
-				} catch (e) {
-					consola.warn(`接口 ${i.path} 的 res_body 不是合法的 JSON 字符串，已忽略`);
-					return false;
-				}
-			})
-			.filter(Boolean) as { res_body: any; id: number }[];
-		const inputList: string[] = [];
-		// 剩余长度
-		const surplusLength = maxLength - 500;
-		// 输入按长度分组
-		const _inputGroup = () => {
-			const input: Record<number, string> = {};
-			[...responseBodyList].forEach((item, index) => {
-				const _input = JSON.stringify({ ...input, [item.id]: item.res_body });
-				if (_input.length < surplusLength) {
-					input[item.id] = item.res_body;
-					responseBodyList.splice(index, 1);
-				}
-			});
-			Object.keys(input).length && inputList.push(JSON.stringify(input));
-			responseBodyList.length && _inputGroup();
-		};
-		_inputGroup();
-		await Promise.all(
-			inputList.map(async (input) => {
-				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
-				Object.keys(mockResult).forEach((id) => {
-					const interfaceInfo = interfaceList.find((i) => i._id === Number(id));
-					if (interfaceInfo) {
-						interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
-					}
-				});
-			})
-		);
 	}
 }

@@ -179,6 +179,10 @@ export interface Interface {
 	_mockCode: string;
 	/** 输入代码路径（自行实现） */
 	_outputFilePath: string;
+	/** 解析后的 res_body（自行实现） */
+	_parsedResBody: object;
+	/** 接口响应数据 hash 值（自行实现） */
+	_hash: string;
 	/** 接口名称 */
 	title: string;
 	/** 状态 */
@@ -581,4 +585,10 @@ export interface MockConstruction {
 	method: Method;
 	/** mock 代码 */
 	mockCode: string;
+	/**
+	 * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
+	 *
+	 * 注入格式: `/* hash: ${mockConstruction.hash} &#42;&#47;`
+	 */
+	hash: string;
 }

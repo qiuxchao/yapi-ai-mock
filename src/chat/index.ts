@@ -9,7 +9,7 @@ const chat = async (gptUrl: string, question: string) => {
 	const model: TypeChatLanguageModel = {
 		complete: async function complete(prompt) {
 			try {
-				const response: any = await nodeFetch(gptUrl, {
+				const response = await nodeFetch(gptUrl, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -21,10 +21,9 @@ const chat = async (gptUrl: string, question: string) => {
 					}),
 				});
 				const json = await response.json();
-				return success(json.data.content as string);
+				return success((json?.data?.content as string) ?? '');
 			} catch (err) {
-				consola.error('mock 请求错误: ', err);
-				return error('请求错误');
+				return error(`mock 请求错误 ${err}`);
 			}
 		},
 	};
@@ -32,7 +31,7 @@ const chat = async (gptUrl: string, question: string) => {
 	const translator = createJsonTranslator<MockResponse>(model, schema, 'MockResponse');
 	const response = await translator.translate(question);
 	if (!response.success) {
-		consola.error(response.message);
+		consola.error('mock 请求解析错误', response.message);
 		return {};
 	}
 	return response.data;

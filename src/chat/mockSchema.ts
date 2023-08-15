@@ -10,11 +10,11 @@ export interface MockResponse {
 }
 
 export interface ResponseBodyType {
-	// default 200
+	// response code (default: 200)
 	code: number;
-	// default 'success'
+	// response message (default: 'success')
 	message: string;
-	// default null
+	// response message data (default: null)
 	// If it has currentPage field, its value is 1
 	// If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
 	data: any;
