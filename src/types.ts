@@ -479,7 +479,7 @@ export interface GptConfig {
 
 	/**
 	 * gpt 支持的最大消息字符数
-	 * @default 8192
+	 * @default 4096
 	 */
 	maxLength?: number;
 
@@ -556,6 +556,8 @@ export interface ServerConfig extends SharedConfig {
 	mockStatement?: (mockConstruction: MockConstruction) => string;
 	/** 引入 mock 代码片段 */
 	mockImportStatement?: () => string;
+	/** mock 结果预处理 */
+	preproccessMockResult?: (mockResult: any, interfaceInfo: Interface) => any;
 }
 
 /** 命令行钩子 */

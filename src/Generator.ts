@@ -27,7 +27,7 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { getCachedPrettierOptions, httpGet, throwError, removeInvalidProperty } from './utils';
+import { getCachedPrettierOptions, httpGet, throwError, removeInvalidProperty, preproccessMockResult } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -372,6 +372,9 @@ export class Generator {
 					Object.keys(mockResult).map(async (id) => {
 						const interfaceInfo = interfaceList.find((i) => i._id === Number(id));
 						if (interfaceInfo) {
+							const mockCode = isFunction(syntheticalConfig.preproccessMockResult)
+								? syntheticalConfig.preproccessMockResult(mockResult[Number(id)], interfaceInfo)
+								: preproccessMockResult(mockResult[Number(id)], interfaceInfo);
 							interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
 							const code = await this.generateCode(syntheticalConfig, interfaceInfo);
 							outputFileList[interfaceInfo._outputFilePath] = {

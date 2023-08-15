@@ -7,6 +7,8 @@ import path from 'path';
 
 const chat = async (gptUrl: string, question: string) => {
 	const model: TypeChatLanguageModel = {
+		// 重试次数
+		retryMaxAttempts: 5,
 		complete: async function complete(prompt) {
 			try {
 				const response = await nodeFetch(gptUrl, {

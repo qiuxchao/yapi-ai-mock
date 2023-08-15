@@ -1,6 +1,7 @@
 import nodeFetch, { BodyInit } from 'node-fetch';
 import { isObject, memoize, run } from 'vtils';
 import prettier from 'prettier';
+import { Interface } from './types';
 
 /**
  * 抛出错误。
@@ -111,4 +112,14 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
 		removeInvalidProperty(obj[key]);
 	});
 	return obj;
+};
+
+/** 处理 mock 结果 */
+export const preproccessMockResult = (mockResult: any, interfaceInfo: Interface) => {
+	if (mockResult?.hasOwnProperty('code')) {
+		mockResult.code = 200;
+	}
+	if (mockResult?.hasOwnProperty('message')) {
+		mockResult.message = 'success';
+	}
 };
