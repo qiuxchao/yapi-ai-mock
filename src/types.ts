@@ -590,7 +590,7 @@ export interface MockConstruction {
 	/**
 	 * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
 	 *
-	 * 注入格式: `/* hash: ${mockConstruction.hash} &#42;&#47;`
+	 * 注入格式: /* hash: ${mockConstruction.hash} &#42;&#47;
 	 */
 	hash: string;
 }
