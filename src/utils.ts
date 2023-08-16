@@ -1,4 +1,4 @@
-import nodeFetch, { BodyInit } from 'node-fetch';
+import axios from 'axios';
 import { isObject, memoize, run } from 'vtils';
 import prettier from 'prettier';
 import { Interface } from './types';
@@ -26,24 +26,24 @@ export async function httpGet<T>(
 	}
 	url = _url.toString();
 
-	const res = await nodeFetch(url, {
+	const res = await axios(url, {
 		method: 'GET',
 		headers,
 	});
 
-	return res.json() as any;
+	return res.data as any;
 }
 
 export async function httpPost<T>(url: string, body?: BodyInit, headers: Record<string, string> = {}): Promise<T> {
-	const res = await nodeFetch(url, {
+	const res = await axios(url, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
 			...headers,
 		},
-		body,
+		data: body,
 	});
-	return res.json() as any;
+	return res.data as any;
 }
 
 export async function getPrettierOptions(): Promise<prettier.Options> {

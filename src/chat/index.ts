@@ -1,6 +1,6 @@
 import { TypeChatLanguageModel, createJsonTranslator, success, error } from 'typechat';
 import { MockResponse } from './mockSchema';
-import nodeFetch from 'node-fetch';
+import axios from 'axios';
 import consola from 'consola';
 import fs from 'fs-extra';
 import path from 'path';
@@ -11,18 +11,18 @@ const chat = async (gptUrl: string, question: string) => {
 		retryMaxAttempts: 5,
 		complete: async function complete(prompt) {
 			try {
-				const response = await nodeFetch(gptUrl, {
+				const response = await axios(gptUrl, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({
+					data: JSON.stringify({
 						temperature: 0,
 						n: 1,
 						messages: [{ role: 'user', content: prompt }],
 					}),
 				});
-				const json = await response.json();
+				const json = await response.data;
 				return success((json?.data?.content as string) ?? '');
 			} catch (err) {
 				return error(`mock 请求错误 ${err}`);

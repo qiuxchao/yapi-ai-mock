@@ -1,7 +1,5 @@
 // Below is the definition used to generate mock code based on JSON Schema.
 
-// Please strictly follow the examples in MockResponse to generate expected results.
-
 export interface MockResponse {
 	// key: The corresponding key in the input JSON object
 	// value: The mock code corresponding to the key
