@@ -33,7 +33,8 @@
 	"author": "",
 	"license": "ISC",
 	"peerDependencies": {
-		"mockjs": "^1.1.0"
+		"mockjs": "^1.1.0",
+		"@types/mockjs": "^1.0.7"
 	},
 	"dependencies": {
 		"change-case": "^3.0.2",

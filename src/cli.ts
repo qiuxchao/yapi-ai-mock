@@ -33,6 +33,7 @@ TSNode.register({
 const ygm = async (config: ConfigWithHooks) => {
 	const generator = new Generator(config);
 	const spinner1 = ora('正在读取并解析配置文件...').start();
+	const spinner2 = ora('正在生成代码并写入文件...');
 	try {
 		await generator.prepare();
 		spinner1.text = '正在获取并解析接口数据...';
@@ -44,13 +45,14 @@ const ygm = async (config: ConfigWithHooks) => {
 		delayNotice.cancel();
 		spinner1.stop();
 		consola.success('接口数据获取并解析完毕');
-		const spinner2 = ora('正在生成代码并写入文件...').start();
+		spinner2.start();
 		await generator.generate(spinner2);
 		spinner2.stop();
-		consola.success('全部文件写入完毕');
+		consola.success('所有任务执行完毕');
 		await config!.hooks?.success?.();
 	} catch (err) {
 		spinner1?.stop();
+		spinner2?.stop();
 		await config?.hooks?.fail?.();
 		consola.error(err);
 	}

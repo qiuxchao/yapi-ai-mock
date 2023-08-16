@@ -33,7 +33,7 @@ const chat = async (gptUrl: string, question: string) => {
 	const translator = createJsonTranslator<MockResponse>(model, schema, 'MockResponse');
 	const response = await translator.translate(question);
 	if (!response.success) {
-		consola.error('mock 请求解析错误', response.message);
+		consola.warn('mock 请求解析错误', response.message);
 		return {};
 	}
 	return response.data;
