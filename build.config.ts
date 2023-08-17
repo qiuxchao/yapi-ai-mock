@@ -21,7 +21,7 @@ export default defineBuildConfig({
 		emitCJS: true,
 		cjsBridge: true,
 		esbuild: {
-			minify: true,
+			// minify: true,
 		},
 		alias: {
 			entries: {
