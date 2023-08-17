@@ -1,6 +1,6 @@
-import type { MockOptions, MockOptionsItem } from './types';
+import type { MockOptionsItem } from './types';
 
-export const defineMock = (mock: MockOptionsItem | MockOptions): MockOptionsItem | MockOptions => {
+export const defineMock = (mock: MockOptionsItem): MockOptionsItem => {
 	return mock;
 };
 

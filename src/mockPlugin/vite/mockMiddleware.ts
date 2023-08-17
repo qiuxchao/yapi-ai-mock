@@ -3,16 +3,10 @@ import path from 'node:path';
 import { parse as urlParse } from 'node:url';
 import chokidar from 'chokidar';
 import fastGlob from 'fast-glob';
-import { match, pathToRegexp } from 'path-to-regexp';
+import { match } from 'path-to-regexp';
 import { transformWithEsbuild } from 'vite';
 import type { Connect, ResolvedConfig } from 'vite';
-import type {
-	Method,
-	MockOptions,
-	MockOptionsItem,
-	MockServerPluginOptions,
-	ResponseReq,
-} from './types';
+import type { MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
 import { castArray, wait } from 'vtils';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs-extra';
 import consola from 'consola';
@@ -27,17 +21,13 @@ export async function mockServerMiddleware(
 	const prefix = castArray(options.prefix);
 	const include = castArray(options.include);
 	const includePaths = await fastGlob(include, { cwd: process.cwd() });
-	const modules: Record<string, MockOptions | MockOptionsItem> = Object.create(null);
-	let mockList!: MockOptions;
-
+	const modules: Record<string, string> = Object.create(null);
 	for (const filepath of includePaths) {
-		modules[filepath] = await loadModule(filepath);
+		const { enabled, mockPath, jsFilePath } = await loadModule(filepath);
+		if (enabled) {
+			modules[mockPath] = jsFilePath;
+		}
 	}
-
-	setupMockList();
-
-	console.log('modules', modules);
-	console.log('mockList', mockList);
 
 	// 监听 mock 目录变化
 	const watcher = chokidar.watch(include.splice(0)[0], {
@@ -48,30 +38,31 @@ export async function mockServerMiddleware(
 
 	watcher.on('add', async filepath => {
 		consola.info('Mock watcher add: ', filepath);
-		modules[filepath] = await loadModule(filepath);
-		setupMockList();
+		await updateModule(filepath);
 	});
 	watcher.on('change', async filepath => {
 		consola.info('Mock watcher change', filepath);
-		modules[filepath] = await loadModule(filepath);
-		setupMockList();
+		await updateModule(filepath);
 	});
 	watcher.on('unlink', filepath => {
 		consola.info('Mock watcher unlink', filepath);
-		delete modules[filepath];
-		setupMockList();
+		Object.keys(modules).forEach(key => {
+			if (modules[key] === filepath) {
+				delete modules[key];
+			}
+		});
 	});
 
-	function setupMockList() {
-		mockList = [];
-		Object.keys(modules).forEach(key => {
-			const handle = modules[key];
-			mockList.push(...castArray(handle));
-		});
-		mockList = mockList.filter(mock => mock.enabled || typeof mock.enabled === 'undefined');
-	}
-
 	httpServer?.on('close', () => watcher.close());
+
+	async function updateModule(filePath: string) {
+		const { mockPath, jsFilePath, enabled } = await loadModule(filePath);
+		if (enabled) {
+			modules[mockPath] = jsFilePath;
+		} else {
+			delete modules[mockPath];
+		}
+	}
 
 	return async function (req, res, next) {
 		// 只 mock 指定前缀的请求
@@ -81,15 +72,10 @@ export async function mockServerMiddleware(
 		const method = req.method!.toUpperCase();
 		const { query, pathname } = urlParse(req.url!, true);
 
+		if (!modules[pathname!]) return next();
+
 		// 找到需要 mock 的接口数据
-		const currentMock = mockList.find(mock => {
-			if (!pathname || !mock || !mock.url) return false;
-			const methods: Method[] = mock.method
-				? castArray(mock.method).map(method => method.toUpperCase() as Method)
-				: ['GET', 'POST'];
-			if (!methods.includes(req.method!.toUpperCase() as Method)) return false;
-			return pathToRegexp(mock.url).test(pathname);
-		});
+		const currentMock = await loadESModule(modules[pathname!]);
 
 		if (!currentMock) return next();
 
@@ -137,8 +123,11 @@ function doesContextMatchUrl(context: string, url: string): boolean {
 	return (context.startsWith('^') && new RegExp(context).test(url)) || url.startsWith(context);
 }
 
-async function loadModule(filepath: string): Promise<MockOptions | MockOptionsItem> {
+async function loadModule(
+	filepath: string,
+): Promise<{ mockPath: string; jsFilePath: string; enabled: boolean }> {
 	const ext = path.extname(filepath);
+	let jsFilePath = filepath;
 	if (ext === '.ts') {
 		const tsText = readFileSync(filepath, 'utf-8');
 		const { code } = await transformWithEsbuild(tsText, filepath, {
@@ -150,13 +139,13 @@ async function loadModule(filepath: string): Promise<MockOptions | MockOptionsIt
 		const tempBasename = path.dirname(tempFile);
 		mkdirSync(tempBasename, { recursive: true });
 		writeFileSync(tempFile, code, 'utf8');
-		return await loadESModule(tempFile);
+		jsFilePath = tempFile;
 	}
-	return await loadESModule(filepath);
+	const { url, enabled = true } = await loadESModule(jsFilePath);
+	return { mockPath: url, jsFilePath, enabled };
 }
 
-async function loadESModule(filepath: string): Promise<MockOptions | MockOptionsItem> {
+async function loadESModule(filepath: string): Promise<MockOptionsItem> {
 	const handle = await import(`${filepath}?${Date.now()}`);
-	if (handle && handle.default) return handle.default as MockOptions | MockOptionsItem;
-	return Object.keys(handle || {}).map(key => handle[key]) as MockOptions;
+	return handle.default as MockOptionsItem;
 }
