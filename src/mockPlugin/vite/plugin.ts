@@ -1,13 +1,18 @@
-import type { Plugin } from 'vite';
-import { mockServerMiddleware } from './mockMiddleware';
+import { Plugin } from 'vite';
 import type { MockServerPluginOptions } from './types';
+import { mockServerMiddleware } from './mockMiddleware';
 
-export function mockDevServerPlugin(options: MockServerPluginOptions = { include: ['mock/**/*.*'] }): Plugin {
+export function mockDevServerPlugin(
+	options: MockServerPluginOptions = { include: ['mock/**/*.*'], prefix: '/mock' },
+): Plugin {
 	return {
-		name: 'vite-plugin-mock-dev-server',
-
+		name: 'vite-plugin-mock',
 		async configureServer({ middlewares, config, httpServer }) {
-			const middleware = await mockServerMiddleware(httpServer, config, options);
+			const middleware = await mockServerMiddleware(
+				httpServer,
+				config,
+				options as Required<MockServerPluginOptions>,
+			);
 			middlewares.use(middleware);
 		},
 	};
