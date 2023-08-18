@@ -5,7 +5,7 @@ import chokidar from 'chokidar';
 import fastGlob from 'fast-glob';
 import { match } from 'path-to-regexp';
 import { transformWithEsbuild } from 'vite';
-import type { Connect, ResolvedConfig } from 'vite';
+import type { Connect } from 'vite';
 import type { MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
 import { castArray, wait } from 'vtils';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs-extra';
@@ -15,7 +15,6 @@ const MOCK_TEMP = 'node_modules/.cache/.mock_server';
 
 export async function mockServerMiddleware(
 	httpServer: Server | null,
-	config: ResolvedConfig,
 	options: Required<MockServerPluginOptions>,
 ): Promise<Connect.NextHandleFunction> {
 	const prefix = castArray(options.prefix);
@@ -53,7 +52,12 @@ export async function mockServerMiddleware(
 		});
 	});
 
+	// 监听 httpServer 关闭时关闭 watcher
 	httpServer?.on('close', () => watcher.close());
+	// 监听进程退出时关闭 watcher
+	process?.on('SIGINT', () => {
+		watcher.close();
+	});
 
 	async function updateModule(filePath: string) {
 		const { mockPath, jsFilePath, enabled } = await loadModule(filePath);
