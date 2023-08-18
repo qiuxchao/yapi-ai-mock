@@ -14,14 +14,13 @@ export async function mockServerMiddleware(
 	httpServer: Server | null,
 	options: Required<MockServerPluginOptions>,
 ): Promise<Connect.NextHandleFunction> {
-	console.log(options);
 	const prefix = castArray(options.prefix);
 	const include = castArray(options.include);
 	const includePaths = await fastGlob(include, { cwd: process.cwd() });
 	const modules: Record<string, string> = Object.create(null);
 	for (const filepath of includePaths) {
 		const {
-			content: { url, enabled },
+			content: { url, enabled = true },
 			jsFilePath,
 		} = await loadModule<MockOptionsItem>(filepath, MOCK_TEMP_PATH);
 		if (enabled) {
@@ -61,7 +60,7 @@ export async function mockServerMiddleware(
 	async function updateModule(filePath: string) {
 		const {
 			jsFilePath,
-			content: { url, enabled },
+			content: { url, enabled = true },
 		} = await loadModule<MockOptionsItem>(filePath, MOCK_TEMP_PATH);
 		if (enabled) {
 			modules[url] = jsFilePath;
@@ -71,8 +70,6 @@ export async function mockServerMiddleware(
 	}
 
 	return async function (req, res, next) {
-		console.log(req.url, prefix, include, modules);
-
 		// 只 mock 指定前缀的请求
 		if (!prefix.some(pre => doesContextMatchUrl(pre, req.url!))) {
 			return next();
