@@ -1,30 +1,31 @@
 import { type Server } from 'node:http';
-import path from 'node:path';
 import { parse as urlParse } from 'node:url';
 import chokidar from 'chokidar';
 import fastGlob from 'fast-glob';
 import { match } from 'path-to-regexp';
-import { transformWithEsbuild } from 'vite';
 import type { Connect } from 'vite';
 import type { MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
 import { castArray, wait } from 'vtils';
-import { mkdirSync, readFileSync, writeFileSync } from 'fs-extra';
 import consola from 'consola';
-
-const MOCK_TEMP = 'node_modules/.cache/.mock_server';
+import { loadESModule, loadModule } from '@/utils';
+import { MOCK_TEMP_PATH } from '@/constant';
 
 export async function mockServerMiddleware(
 	httpServer: Server | null,
 	options: Required<MockServerPluginOptions>,
 ): Promise<Connect.NextHandleFunction> {
+	console.log(options);
 	const prefix = castArray(options.prefix);
 	const include = castArray(options.include);
 	const includePaths = await fastGlob(include, { cwd: process.cwd() });
 	const modules: Record<string, string> = Object.create(null);
 	for (const filepath of includePaths) {
-		const { enabled, mockPath, jsFilePath } = await loadModule(filepath);
+		const {
+			content: { url, enabled },
+			jsFilePath,
+		} = await loadModule<MockOptionsItem>(filepath, MOCK_TEMP_PATH);
 		if (enabled) {
-			modules[mockPath] = jsFilePath;
+			modules[url] = jsFilePath;
 		}
 	}
 
@@ -55,20 +56,23 @@ export async function mockServerMiddleware(
 	// 监听 httpServer 关闭时关闭 watcher
 	httpServer?.on('close', () => watcher.close());
 	// 监听进程退出时关闭 watcher
-	process?.on('SIGINT', () => {
-		watcher.close();
-	});
+	process?.on('SIGINT', () => watcher.close());
 
 	async function updateModule(filePath: string) {
-		const { mockPath, jsFilePath, enabled } = await loadModule(filePath);
+		const {
+			jsFilePath,
+			content: { url, enabled },
+		} = await loadModule<MockOptionsItem>(filePath, MOCK_TEMP_PATH);
 		if (enabled) {
-			modules[mockPath] = jsFilePath;
+			modules[url] = jsFilePath;
 		} else {
-			delete modules[mockPath];
+			delete modules[url];
 		}
 	}
 
 	return async function (req, res, next) {
+		console.log(req.url, prefix, include, modules);
+
 		// 只 mock 指定前缀的请求
 		if (!prefix.some(pre => doesContextMatchUrl(pre, req.url!))) {
 			return next();
@@ -79,7 +83,7 @@ export async function mockServerMiddleware(
 		if (!modules[pathname!]) return next();
 
 		// 找到需要 mock 的接口数据
-		const currentMock = await loadESModule(modules[pathname!]);
+		const currentMock = await loadESModule<MockOptionsItem>(modules[pathname!]);
 
 		if (!currentMock) return next();
 
@@ -125,31 +129,4 @@ export async function mockServerMiddleware(
 
 function doesContextMatchUrl(context: string, url: string): boolean {
 	return (context.startsWith('^') && new RegExp(context).test(url)) || url.startsWith(context);
-}
-
-async function loadModule(
-	filepath: string,
-): Promise<{ mockPath: string; jsFilePath: string; enabled: boolean }> {
-	const ext = path.extname(filepath);
-	let jsFilePath = filepath;
-	if (ext === '.ts') {
-		const tsText = readFileSync(filepath, 'utf-8');
-		const { code } = await transformWithEsbuild(tsText, filepath, {
-			target: 'es2020',
-			platform: 'node',
-			format: 'esm',
-		});
-		const tempFile = path.join(process.cwd(), MOCK_TEMP, filepath.replace(/\.ts$/, '.mjs'));
-		const tempBasename = path.dirname(tempFile);
-		mkdirSync(tempBasename, { recursive: true });
-		writeFileSync(tempFile, code, 'utf8');
-		jsFilePath = tempFile;
-	}
-	const { url, enabled = true } = await loadESModule(jsFilePath);
-	return { mockPath: url, jsFilePath, enabled };
-}
-
-async function loadESModule(filepath: string): Promise<MockOptionsItem> {
-	const handle = await import(`${filepath}?${Date.now()}`);
-	return handle.default as MockOptionsItem;
 }

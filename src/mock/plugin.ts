@@ -2,9 +2,10 @@ import { Plugin } from 'vite';
 import type { MockServerPluginOptions } from './types';
 import { mockServerMiddleware } from './mockMiddleware';
 import { type Server } from 'node:http';
+import { INCLUDE, PREFIX } from '../constant';
 
 export function viteMockPlugin(
-	options: MockServerPluginOptions = { include: ['mock/**/*.*'], prefix: '/mock' },
+	options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX },
 ): Plugin {
 	return {
 		name: 'vite-mock-plugin',
@@ -20,7 +21,7 @@ export function viteMockPlugin(
 
 export async function webpackMockMiddleware(
 	httpServer: Server | null,
-	options: MockServerPluginOptions = { include: ['mock/**/*.*'], prefix: '/mock' },
+	options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX },
 ) {
 	const middleware = await mockServerMiddleware(
 		httpServer,

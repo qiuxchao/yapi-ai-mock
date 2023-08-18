@@ -2,6 +2,9 @@ import axios from 'axios';
 import { isObject, memoize, run } from 'vtils';
 import prettier from 'prettier';
 import { Interface } from './types';
+import path from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'fs-extra';
+import { transformWithEsbuild } from 'vite';
 
 /**
  * 抛出错误。
@@ -16,11 +19,11 @@ export function throwError(...msg: string[]): never {
 export async function httpGet<T>(
 	url: string,
 	query?: Record<string, any>,
-	headers?: Record<string, string>
+	headers?: Record<string, string>,
 ): Promise<T> {
 	const _url = new URL(url);
 	if (query) {
-		Object.keys(query).forEach((key) => {
+		Object.keys(query).forEach(key => {
 			_url.searchParams.set(key, query[key]);
 		});
 	}
@@ -34,7 +37,11 @@ export async function httpGet<T>(
 	return res.data as any;
 }
 
-export async function httpPost<T>(url: string, body?: BodyInit, headers: Record<string, string> = {}): Promise<T> {
+export async function httpPost<T>(
+	url: string,
+	body?: BodyInit,
+	headers: Record<string, string> = {},
+): Promise<T> {
 	const res = await axios(url, {
 		method: 'POST',
 		headers: {
@@ -68,7 +75,9 @@ export async function getPrettierOptions(): Promise<prettier.Options> {
 		return prettierOptions;
 	}
 
-	const [prettierConfigErr, prettierConfig] = await run(() => prettier.resolveConfig(prettierConfigPath));
+	const [prettierConfigErr, prettierConfig] = await run(() =>
+		prettier.resolveConfig(prettierConfigPath),
+	);
 	if (prettierConfigErr || !prettierConfig) {
 		return prettierOptions;
 	}
@@ -80,7 +89,8 @@ export async function getPrettierOptions(): Promise<prettier.Options> {
 	};
 }
 
-export const getCachedPrettierOptions: () => Promise<prettier.Options> = memoize(getPrettierOptions);
+export const getCachedPrettierOptions: () => Promise<prettier.Options> =
+	memoize(getPrettierOptions);
 
 /** 递归删除对象中指定的key */
 export const removeProperty = (obj: Record<string, any>, prop: string | string[]) => {
@@ -88,13 +98,13 @@ export const removeProperty = (obj: Record<string, any>, prop: string | string[]
 		return obj;
 	}
 	if (Array.isArray(prop)) {
-		prop.forEach((p) => {
+		prop.forEach(p => {
 			delete obj[p];
 		});
 	} else {
 		delete obj[prop];
 	}
-	Object.keys(obj).forEach((key) => {
+	Object.keys(obj).forEach(key => {
 		removeProperty(obj[key], prop);
 	});
 	return obj;
@@ -105,7 +115,7 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
 	if (!isObject(obj)) {
 		return obj;
 	}
-	Object.keys(obj).forEach((key) => {
+	Object.keys(obj).forEach(key => {
 		if (!['properties', 'type', 'description'].includes(key) && !obj[key]?.type) {
 			delete obj[key];
 		}
@@ -123,3 +133,45 @@ export const preproccessMockResult = (mockResult: any, interfaceInfo: Interface)
 		mockResult.message = 'success';
 	}
 };
+
+/**
+ * 加载ES模块
+ */
+export async function loadESModule<T>(filepath: string): Promise<T> {
+	const handle = await import(`${filepath}?${Date.now()}`);
+	return handle.default;
+}
+
+/**
+ * 加载模块 ts/js
+ * @param filepath 文件路径
+ * @returns 文件内容
+ */
+export async function loadModule<T>(
+	filepath: string,
+	tempPath: string,
+): Promise<{
+	content: T;
+	jsFilePath: string;
+}> {
+	const ext = path.extname(filepath);
+	let jsFilePath = filepath;
+	if (ext === '.ts') {
+		const tsText = readFileSync(filepath, 'utf-8');
+		const { code } = await transformWithEsbuild(tsText, filepath, {
+			target: 'es2020',
+			platform: 'node',
+			format: 'esm',
+		});
+		const tempFile = path.join(process.cwd(), tempPath, filepath.replace(/\.ts$/, '.mjs'));
+		const tempBasename = path.dirname(tempFile);
+		mkdirSync(tempBasename, { recursive: true });
+		writeFileSync(tempFile, code, 'utf8');
+		jsFilePath = tempFile;
+	}
+	const content = await loadESModule<T>(jsFilePath);
+	return {
+		content,
+		jsFilePath,
+	};
+}

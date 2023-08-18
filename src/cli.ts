@@ -1,34 +1,14 @@
 import path from 'path';
 import fs from 'fs-extra';
 import consola from 'consola';
-import TSNode from 'ts-node';
-import { ConfigWithHooks } from '@/types';
+import { ConfigWithHooks, ServerConfig } from '@/types';
 import ora from 'ora';
 import yargs from 'yargs';
 import { wait } from 'vtils';
 import { Generator } from '@/Generator';
-
-TSNode.register({
-	// 不加载本地的 tsconfig.json
-	skipProject: true,
-	// 仅转译，不做类型检查
-	transpileOnly: true,
-	// 自定义编译选项
-	compilerOptions: {
-		strict: false,
-		target: 'es2017',
-		module: 'commonjs',
-		moduleResolution: 'node',
-		declaration: false,
-		removeComments: false,
-		esModuleInterop: true,
-		allowSyntheticDefaultImports: true,
-		importHelpers: false,
-		// 转换 js，支持在 ygm.config.js 里使用最新语法
-		allowJs: true,
-		lib: ['es2017'],
-	},
-});
+import mockServer from '@/mock/server';
+import { loadModule } from '@/utils';
+import { CONFIG_TEMP_PATH } from './constant';
 
 const ygm = async (config: ConfigWithHooks) => {
 	const generator = new Generator(config);
@@ -59,12 +39,7 @@ const ygm = async (config: ConfigWithHooks) => {
 	await config?.hooks?.complete?.();
 };
 
-const run = async (
-	cmd: string | undefined,
-	options?: {
-		configFile?: string;
-	}
-) => {
+const run = async (options?: { configFile?: string }, isServe = false) => {
 	let useCustomConfigFile = false;
 	let cwd!: string;
 	let configTSFile!: string;
@@ -88,19 +63,35 @@ const run = async (
 	}
 
 	if (!configFileExist) {
-		return consola.error(`找不到配置文件: ${useCustomConfigFile ? configFile : `${configTSFile} 或 ${configJSFile}`}`);
+		return consola.error(
+			`找不到配置文件: ${useCustomConfigFile ? configFile : `${configTSFile} 或 ${configJSFile}`}`,
+		);
 	}
 	consola.success(`找到配置文件: ${configFile}`);
-	const config: ConfigWithHooks = require(configFile).default;
+	const { content: config } = await loadModule<ConfigWithHooks>(configFile, CONFIG_TEMP_PATH);
+	if (isServe) {
+		await mockServer((config as ServerConfig)?.mockServer);
+		return;
+	}
 	await ygm(config);
 };
 
 if (require.main === module) {
-	const argv = yargs(process.argv).alias('c', 'config').argv;
+	const argv = yargs(process.argv)
+		.usage('使用：npx ygm [选项]')
+		.alias('h', ['help'])
+		.alias('c', 'config')
+		.alias('version', 'v')
+		.example('$ npx ygm', '生成 mock 代码')
+		.example('$ npx ygm -c=配置文件路径', '指定配置文件并生成 mock 代码')
+		.example('$ npx ygm serve', '启动 mock 服务器').argv;
 	// 指定配置文件运行：ygm -c|-config=配置文件路径
-	run(argv._[2] as any, {
-		configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
-	});
+	run(
+		{
+			configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
+		},
+		argv?._?.includes('serve') ?? false,
+	);
 }
 
 export default ygm;

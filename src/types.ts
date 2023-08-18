@@ -428,7 +428,7 @@ export interface SharedConfig {
 	preproccessInterface?(
 		interfaceInfo: Interface,
 		changeCase: ChangeCase,
-		syntheticalConfig: SyntheticalConfig
+		syntheticalConfig: SyntheticalConfig,
 	): Interface | false;
 }
 
@@ -468,41 +468,30 @@ export interface ProjectConfig extends SharedConfig {
 }
 
 /**
- * GPT 配置
+ * mock 服务配置。
  */
-export interface GptConfig {
+export interface MockServerConfig {
 	/**
-	 * gpt 接口地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
-	 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
-	 */
-	url?: string;
-
-	/**
-	 * gpt 支持的最大消息字符数
-	 * @default 4096
-	 */
-	maxLength?: number;
-
-	/**
-	 * gpt 请求头
-	 */
-	headers?: Record<string, string>;
-
-	/**
-	 * gpt 响应字段路径
-	 * 如果接口响应的结果是 `JSON` 对象，
-	 * 且我们想要的数据在该对象下，
-	 * 那我们就可将 `dataKey` 设为我们想要的数据对应的键。
+	 * mock 服务端口。默认为 `3000`。
 	 *
-	 * 比如该对象为 `{ code: 200, msg: 'success', data: { content: 100 } }`，
-	 * 我们想要的数据为 `100`，
-	 * 则我们可将 `dataKey` 设为 `['data', 'content']`。
-	 *
-	 * @example 'data'
-	 * @example ['data', 'content']
-	 * @default ['data', 'content']
+	 * @default 3000
 	 */
-	dataKey?: OneOrMore<string>;
+	port?: number;
+
+	/**
+	 * 为 http mock 服务配置 路径匹配规则，任何请求路径以 prefix 开头的都将被拦截代理。
+	 * 如果 prefix 以 `^` 开头，将被识别为 `RegExp`。
+	 * @default '/mock'
+	 * @example ['/mock']
+	 */
+	prefix?: string | string[];
+
+	/**
+	 * glob字符串匹配 mock数据文件
+	 *
+	 * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
+	 */
+	include?: string | string[];
 }
 
 export interface ServerConfig extends SharedConfig {
@@ -548,15 +537,38 @@ export interface ServerConfig extends SharedConfig {
 	mockPrefix?: string;
 
 	/**
-	 * gpt 配置
+	 * gpt 配置。
 	 */
-	gpt?: GptConfig;
+	gpt?: {
+		/**
+		 * gpt 接口地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
+		 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
+		 */
+		url?: string;
 
-	/** mock 代码片段 */
+		/**
+		 * gpt 支持的最大消息字符数。（实际发送时会用这个值减去提示词，得到的才是真实的字符数）
+		 * @default 4096
+		 */
+		maxTokens?: number;
+	};
+
+	/**
+	 * mock 服务配置。
+	 */
+	mockServer?: MockServerConfig;
+
+	/** mock 代码片段。 */
 	mockStatement?: (mockConstruction: MockConstruction) => string;
-	/** 引入 mock 代码片段 */
+
+	/**
+	 * 生成的文件顶部引入部分的代码片段。
+	 */
 	mockImportStatement?: () => string;
-	/** mock 结果预处理 */
+
+	/**
+	 * mock 结果预处理。
+	 */
 	preproccessMockResult?: (mockResult: any, interfaceInfo: Interface) => any;
 }
 

@@ -27,7 +27,13 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 } from './types';
-import { getCachedPrettierOptions, httpGet, throwError, removeInvalidProperty, preproccessMockResult } from './utils';
+import {
+	getCachedPrettierOptions,
+	httpGet,
+	throwError,
+	removeInvalidProperty,
+	preproccessMockResult,
+} from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
@@ -59,7 +65,7 @@ export class Generator {
 
 	constructor(
 		config: Config,
-		private options: { cwd: string } = { cwd: process.cwd() }
+		private options: { cwd: string } = { cwd: process.cwd() },
 	) {
 		// config 可能是对象或数组，统一为数组
 		this.config = castArray(config);
@@ -69,15 +75,19 @@ export class Generator {
 	async prepare(): Promise<void> {
 		this.config = await Promise.all(
 			// config 可能是对象或数组，统一为数组
-			this.config.map(async (item) => {
+			this.config.map(async item => {
 				const { envPath } = item;
 				dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
 				const serverUrl = process.env['YAPI_SERVER_URL'] || item?.serverUrl?.replace(/\/+$/, '');
 				const gptUrl = process.env['YGM_GPT_URL'] || item.gpt?.url;
 				if (!serverUrl)
-					throwError('未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段或 env 文件中的 YAPI_SERVER_URL 字段配置');
+					throwError(
+						'未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段或 env 文件中的 YAPI_SERVER_URL 字段配置',
+					);
 				if (!gptUrl)
-					throwError('未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YGM_GPT_URL 字段配置');
+					throwError(
+						'未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YGM_GPT_URL 字段配置',
+					);
 				// 解析 env 中的配置
 				item.serverUrl = serverUrl;
 				item.gpt = {
@@ -85,7 +95,7 @@ export class Generator {
 					url: gptUrl,
 				};
 				return item;
-			})
+			}),
 		);
 	}
 
@@ -99,10 +109,10 @@ export class Generator {
 			this.config.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
 					projects.push(
-						...castArray(project.token).map((token) => ({
+						...castArray(project.token).map(token => ({
 							...project,
 							token: token,
-						}))
+						})),
 					);
 					return projects;
 				}, []);
@@ -119,15 +129,17 @@ export class Generator {
 								let categoryIds = castArray(categoryConfig.id);
 								// 全部分类
 								if (categoryIds.includes(0)) {
-									categoryIds.push(...projectInfo.cats.map((cat) => cat._id));
+									categoryIds.push(...projectInfo.cats.map(cat => cat._id));
 								}
 								// 唯一化
 								categoryIds = uniq(categoryIds);
 								// 去掉被排除的分类
-								const excludedCategoryIds = categoryIds.filter((id) => id < 0).map(Math.abs);
-								categoryIds = categoryIds.filter((id) => !excludedCategoryIds.includes(Math.abs(id)));
+								const excludedCategoryIds = categoryIds.filter(id => id < 0).map(Math.abs);
+								categoryIds = categoryIds.filter(id => !excludedCategoryIds.includes(Math.abs(id)));
 								// 删除不存在的分类
-								categoryIds = categoryIds.filter((id) => !!projectInfo.cats.find((cat) => cat._id === id));
+								categoryIds = categoryIds.filter(
+									id => !!projectInfo.cats.find(cat => cat._id === id),
+								);
 								// 顺序化
 								categoryIds = categoryIds.sort();
 
@@ -148,16 +160,21 @@ export class Generator {
 										let interfaceList = await this.fetchInterfaceList(syntheticalConfig);
 
 										interfaceList = interfaceList
-											.map((interfaceInfo) => {
+											.map(interfaceInfo => {
 												// 实现 _project 字段
 												interfaceInfo._project = omit(projectInfo, ['cats']);
 												// 实现 _outputFilePath 字段
-												const [_, projectName, categoryName, ...interfacePath] = interfaceInfo.path.split('/');
+												const [_, projectName, categoryName, ...interfacePath] =
+													interfaceInfo.path.split('/');
 												interfaceInfo._outputFilePath = path.resolve(
 													this.options.cwd,
 													`${syntheticalConfig.mockDir || 'mock'}/${changeCase.camelCase(
-														`${projectName}-${categoryName}`
-													)}${interfacePath.length ? `/${changeCase.camelCase(interfacePath.join(''))}` : ''}.ts`
+														`${projectName}-${categoryName}`,
+													)}${
+														interfacePath.length
+															? `/${changeCase.camelCase(interfacePath.join(''))}`
+															: ''
+													}.ts`,
 												);
 												// 对接口返回数据进行解析处理，如果无法解析，则忽略该接口
 												try {
@@ -166,7 +183,9 @@ export class Generator {
 													removeInvalidProperty(parsedResBody);
 													interfaceInfo._parsedResBody = parsedResBody;
 												} catch (e) {
-													consola.warn(`接口 ${interfaceInfo.path} 的 res_body 不是合法的 JSON 字符串，已忽略`);
+													consola.warn(
+														`接口 ${interfaceInfo.path} 的 res_body 不是合法的 JSON 字符串，已忽略`,
+													);
 													return false;
 												}
 												// 根据 res_body 生成 hash，用来防止重新生成
@@ -184,7 +203,7 @@ export class Generator {
 													? syntheticalConfig.preproccessInterface(
 															cloneDeepFast(interfaceInfo),
 															changeCase,
-															syntheticalConfig
+															syntheticalConfig,
 													  )
 													: interfaceInfo;
 												return _interfaceInfo;
@@ -192,18 +211,18 @@ export class Generator {
 											.filter(Boolean) as any;
 										interfaceList.sort((a, b) => a._id - b._id);
 										allInterfaceList.push(
-											...interfaceList.map((interfaceInfo) => ({
+											...interfaceList.map(interfaceInfo => ({
 												syntheticalConfig,
 												interfaceInfo,
-											}))
+											})),
 										);
-									})
+									}),
 								);
-							})
+							}),
 						);
-					})
+					}),
 				);
-			})
+			}),
 		);
 		this.interfaceList = allInterfaceList;
 		this.total = allInterfaceList.length;
@@ -212,16 +231,19 @@ export class Generator {
 	/** 生成 */
 	async generate(spinner: Ora): Promise<void> {
 		// 根据 `gpt.url` 对所有接口进行分组
-		const interfaceListGrouyByGptUrl = groupBy(this.interfaceList, (item) => item.syntheticalConfig.gpt?.url);
+		const interfaceListGrouyByGptUrl = groupBy(
+			this.interfaceList,
+			item => item.syntheticalConfig.gpt?.url,
+		);
 		await Promise.all(
-			Object.keys(interfaceListGrouyByGptUrl).map(async (gptUrl) => {
+			Object.keys(interfaceListGrouyByGptUrl).map(async gptUrl => {
 				const interfaceList = interfaceListGrouyByGptUrl[gptUrl];
 				await this.genMockCode(
 					interfaceList[0].syntheticalConfig,
-					interfaceList.map((item) => item.interfaceInfo),
-					spinner
+					interfaceList.map(item => item.interfaceInfo),
+					spinner,
 				);
-			})
+			}),
 		);
 	}
 
@@ -251,7 +273,9 @@ export class Generator {
 			}
 			// 转义标题中的 /
 			const escapedTitle = String(extendedInterfaceInfo.title).replace(/\//g, '\\/');
-			const description = hasLink ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})` : escapedTitle;
+			const description = hasLink
+				? `[${escapedTitle}↗](${extendedInterfaceInfo._url})`
+				: escapedTitle;
 			const summary: Array<
 				| false
 				| {
@@ -267,7 +291,7 @@ export class Generator {
 				},
 				hasTag && {
 					label: '标签',
-					value: extendedInterfaceInfo.tag.map((tag) => `\`${tag}\``),
+					value: extendedInterfaceInfo.tag.map(tag => `\`${tag}\``),
 				},
 				hasRequestHeader && {
 					label: '请求头',
@@ -297,8 +321,8 @@ export class Generator {
           `
 				: '';
 			const extraComment: string = summary
-				.filter((item) => typeof item !== 'boolean' && !isEmpty(item.value))
-				.map((item) => {
+				.filter(item => typeof item !== 'boolean' && !isEmpty(item.value))
+				.map(item => {
 					const _item: Exclude<(typeof summary)[0], boolean> = item as any;
 					return `* @${_item.label} ${castArray(_item.value).join(', ')}`;
 				})
@@ -312,7 +336,7 @@ export class Generator {
 
 		// 接口元信息
 		const mockConstruction: MockConstruction = {
-			comment: genComment((title) => `接口 ${title} 的 **Mock配置**`),
+			comment: genComment(title => `接口 ${title} 的 **Mock配置**`),
 			path: extendedInterfaceInfo.path,
 			method: extendedInterfaceInfo.method,
 			mockCode: extendedInterfaceInfo._mockCode,
@@ -339,12 +363,16 @@ export class Generator {
 	}
 
 	/** 生成 mock 代码 */
-	async genMockCode(syntheticalConfig: SyntheticalConfig, interfaceList: InterfaceList, spinner: Ora) {
-		const { maxLength = 4096 } = syntheticalConfig.gpt!;
-		const responseBodyList = interfaceList.map((i) => ({ id: i._id, res_body: i._parsedResBody }));
+	async genMockCode(
+		syntheticalConfig: SyntheticalConfig,
+		interfaceList: InterfaceList,
+		spinner: Ora,
+	) {
+		const { maxTokens = 4096 } = syntheticalConfig.gpt!;
+		const responseBodyList = interfaceList.map(i => ({ id: i._id, res_body: i._parsedResBody }));
 		const inputList: string[] = [];
 		// 剩余长度
-		const surplusLength = maxLength - 1000;
+		const surplusLength = maxTokens - 1000;
 		// 输入按长度分组
 		const _inputGroup = () => {
 			const input: Record<number, object> = {};
@@ -353,8 +381,8 @@ export class Generator {
 				if (_input.length < surplusLength) {
 					input[item.id] = item.res_body;
 					responseBodyList.splice(
-						responseBodyList.findIndex((i) => i.id === item.id),
-						1
+						responseBodyList.findIndex(i => i.id === item.id),
+						1,
 					);
 				}
 			});
@@ -364,25 +392,27 @@ export class Generator {
 		_inputGroup();
 		// 根据分组的输入，获取 mock 代码
 		await Promise.all(
-			inputList.map(async (input) => {
+			inputList.map(async input => {
 				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
 				const outputFileList: OutputFileList = Object.create(null);
 				// 生成代码
 				await Promise.all(
-					Object.keys(mockResult).map(async (id) => {
-						const interfaceInfo = interfaceList.find((i) => i._id === Number(id));
+					Object.keys(mockResult).map(async id => {
+						const interfaceInfo = interfaceList.find(i => i._id === Number(id));
 						if (interfaceInfo) {
 							const mockCode = isFunction(syntheticalConfig.preproccessMockResult)
 								? syntheticalConfig.preproccessMockResult(mockResult[Number(id)], interfaceInfo)
 								: preproccessMockResult(mockResult[Number(id)], interfaceInfo);
-							interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
+							interfaceInfo._mockCode = mockResult[Number(id)]
+								? JSON.stringify(mockResult[Number(id)])
+								: '';
 							const code = await this.generateCode(syntheticalConfig, interfaceInfo);
 							outputFileList[interfaceInfo._outputFilePath] = {
 								syntheticalConfig,
 								content: [code],
 							};
 						}
-					})
+					}),
 				);
 				// 写入文件
 				await this.write(outputFileList);
@@ -390,14 +420,14 @@ export class Generator {
 				this.completed += Object.keys(mockResult).length;
 				spinner.color = 'yellow';
 				spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
-			})
+			}),
 		);
 	}
 
 	/** 写入文件 */
 	async write(outputFileList: OutputFileList) {
 		return Promise.all(
-			Object.keys(outputFileList).map(async (outputFilePath) => {
+			Object.keys(outputFileList).map(async outputFilePath => {
 				let { content, syntheticalConfig } = outputFileList[outputFilePath];
 
 				// 始终写入主文件
@@ -436,7 +466,7 @@ export class Generator {
 					await this.tsc(outputFilePath);
 					await Promise.all([fs.remove(outputFilePath).catch(noop)]);
 				}
-			})
+			}),
 		);
 	}
 
@@ -458,21 +488,21 @@ export class Generator {
 	}
 
 	async tsc(file: string) {
-		return new Promise<void>((resolve) => {
+		return new Promise<void>(resolve => {
 			// add this to fix bug that not-generator-file-on-window
 			const command = `${require('os').platform() === 'win32' ? 'node ' : ''}${JSON.stringify(
-				require.resolve(`typescript/bin/tsc`)
+				require.resolve(`typescript/bin/tsc`),
 			)}`;
 
 			exec(
 				`${command} --target ES2019 --module ESNext --jsx preserve --declaration --esModuleInterop ${JSON.stringify(
-					file
+					file,
 				)}`,
 				{
 					cwd: this.options.cwd,
 					env: process.env,
 				},
-				() => resolve()
+				() => resolve(),
 			);
 		});
 	}
@@ -491,56 +521,63 @@ export class Generator {
 	}
 
 	/** 获取接口分类列表 */
-	fetchExport: ({ serverUrl, token }: Partial<ServerConfig & ProjectConfig & CategoryConfig>) => Promise<Category[]> =
-		memoize(
-			async ({ serverUrl, token }: SyntheticalConfig) => {
-				const projectInfo = await this.fetchProject({ serverUrl, token });
-				const categoryList = await this.fetchApi<CategoryList>(`${serverUrl}/api/plugin/export`, {
-					type: 'json',
-					status: 'all',
-					isWiki: 'false',
-					token: token!,
+	fetchExport: ({
+		serverUrl,
+		token,
+	}: Partial<ServerConfig & ProjectConfig & CategoryConfig>) => Promise<Category[]> = memoize(
+		async ({ serverUrl, token }: SyntheticalConfig) => {
+			const projectInfo = await this.fetchProject({ serverUrl, token });
+			const categoryList = await this.fetchApi<CategoryList>(`${serverUrl}/api/plugin/export`, {
+				type: 'json',
+				status: 'all',
+				isWiki: 'false',
+				token: token!,
+			});
+			return categoryList.map(cat => {
+				const projectId = cat.list?.[0]?.project_id || 0;
+				const catId = cat.list?.[0]?.catid || 0;
+				// 实现分类在 YApi 上的地址
+				cat._url = `${serverUrl}/project/${projectId}/interface/api/cat_${catId}`;
+				cat.list = (cat.list || []).map(item => {
+					const interfaceId = item._id;
+					// 实现接口在 YApi 上的地址
+					item._url = `${serverUrl}/project/${projectId}/interface/api/${interfaceId}`;
+					item.path = `${projectInfo.basepath}${item.path}`;
+					return item;
 				});
-				return categoryList.map((cat) => {
-					const projectId = cat.list?.[0]?.project_id || 0;
-					const catId = cat.list?.[0]?.catid || 0;
-					// 实现分类在 YApi 上的地址
-					cat._url = `${serverUrl}/project/${projectId}/interface/api/cat_${catId}`;
-					cat.list = (cat.list || []).map((item) => {
-						const interfaceId = item._id;
-						// 实现接口在 YApi 上的地址
-						item._url = `${serverUrl}/project/${projectId}/interface/api/${interfaceId}`;
-						item.path = `${projectInfo.basepath}${item.path}`;
-						return item;
-					});
-					return cat;
-				});
-			},
-			({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`
-		);
+				return cat;
+			});
+		},
+		({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`,
+	);
 
-	fetchProject: ({ serverUrl, token }: Partial<ServerConfig & ProjectConfig & CategoryConfig>) => Promise<Project> =
-		memoize(
-			async ({ serverUrl, token }: SyntheticalConfig) => {
-				const projectInfo = await this.fetchApi<Project>(`${serverUrl}/api/project/get`, {
-					token: token!,
-				});
-				const basePath = `/${projectInfo.basepath || '/'}`.replace(/\/+$/, '').replace(/^\/+/, '/');
-				projectInfo.basepath = basePath;
-				// 实现项目在 YApi 上的地址
-				projectInfo._url = `${serverUrl}/project/${projectInfo._id}/interface/api`;
-				return projectInfo;
-			},
-			({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`
-		);
+	fetchProject: ({
+		serverUrl,
+		token,
+	}: Partial<ServerConfig & ProjectConfig & CategoryConfig>) => Promise<Project> = memoize(
+		async ({ serverUrl, token }: SyntheticalConfig) => {
+			const projectInfo = await this.fetchApi<Project>(`${serverUrl}/api/project/get`, {
+				token: token!,
+			});
+			const basePath = `/${projectInfo.basepath || '/'}`.replace(/\/+$/, '').replace(/^\/+/, '/');
+			projectInfo.basepath = basePath;
+			// 实现项目在 YApi 上的地址
+			projectInfo._url = `${serverUrl}/project/${projectInfo._id}/interface/api`;
+			return projectInfo;
+		},
+		({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`,
+	);
 
 	/** 获取项目信息 */
 	async fetchProjectInfo(syntheticalConfig: SyntheticalConfig) {
 		const projectInfo = await this.fetchProject(syntheticalConfig);
-		const projectCats = await this.fetchApi<CategoryList>(`${syntheticalConfig.serverUrl}/api/interface/getCatMenu`, {
-			token: syntheticalConfig.token!,
-			project_id: projectInfo._id,
-		});
+		const projectCats = await this.fetchApi<CategoryList>(
+			`${syntheticalConfig.serverUrl}/api/interface/getCatMenu`,
+			{
+				token: syntheticalConfig.token!,
+				project_id: projectInfo._id,
+			},
+		);
 		return {
 			...projectInfo,
 			cats: projectCats,
@@ -550,11 +587,11 @@ export class Generator {
 	/** 获取分类的接口列表 */
 	async fetchInterfaceList({ serverUrl, token, id }: SyntheticalConfig): Promise<InterfaceList> {
 		const category = ((await this.fetchExport({ serverUrl, token })) || []).find(
-			(cat) => !isEmpty(cat) && !isEmpty(cat.list) && cat.list[0].catid === id
+			cat => !isEmpty(cat) && !isEmpty(cat.list) && cat.list[0].catid === id,
 		);
 
 		if (category) {
-			category.list.forEach((interfaceInfo) => {
+			category.list.forEach(interfaceInfo => {
 				// 实现 _category 字段
 				interfaceInfo._category = omit(category, ['list']);
 			});

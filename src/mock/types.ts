@@ -12,7 +12,8 @@ export interface MockServerPluginOptions {
 
 	/**
 	 * glob字符串匹配 mock数据文件
-	 * @default []
+	 *
+	 * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
 	 */
 	include?: string | string[];
 }
@@ -105,5 +106,3 @@ export interface MockOptionsItem {
 		next: Connect.NextFunction,
 	) => void | Promise<void>;
 }
-
-export type MockOptions = MockOptionsItem[];
