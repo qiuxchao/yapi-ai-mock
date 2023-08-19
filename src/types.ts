@@ -512,7 +512,7 @@ export interface ServerConfig extends SharedConfig {
 	 *
 	 * 可以是 `相对路径` 或 `绝对路径`。
 	 *
-	 * 可以在其中配置 `YAPI_SERVER_URL`（yapi 服务地址） 和 `YGM_GPT_URL`（gpt 接口地址）。
+	 * 可以在其中配置 `YAPI_SERVER_URL`（yapi 服务地址） 和 `YAM_GPT_URL`（gpt 接口地址）。
 	 *
 	 * @default '.env'
 	 */
@@ -541,7 +541,7 @@ export interface ServerConfig extends SharedConfig {
 	 */
 	gpt?: {
 		/**
-		 * gpt 接口地址。也可以通过 `env` 中的 `YGM_GPT_URL` 来配置。
+		 * gpt 接口地址。也可以通过 `env` 中的 `YAM_GPT_URL` 来配置。
 		 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
 		 */
 		url?: string;

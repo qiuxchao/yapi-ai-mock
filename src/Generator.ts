@@ -79,14 +79,14 @@ export class Generator {
 				const { envPath } = item;
 				dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
 				const serverUrl = process.env['YAPI_SERVER_URL'] || item?.serverUrl?.replace(/\/+$/, '');
-				const gptUrl = process.env['YGM_GPT_URL'] || item.gpt?.url;
+				const gptUrl = process.env['YAM_GPT_URL'] || item.gpt?.url;
 				if (!serverUrl)
 					throwError(
 						'未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段或 env 文件中的 YAPI_SERVER_URL 字段配置',
 					);
 				if (!gptUrl)
 					throwError(
-						'未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YGM_GPT_URL 字段配置',
+						'未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YAM_GPT_URL 字段配置',
 					);
 				// 解析 env 中的配置
 				item.serverUrl = serverUrl;
@@ -443,7 +443,7 @@ export class Generator {
 						syntheticalConfig?.mockImportStatement?.() ??
 						`
 					import mockjs from 'mockjs';
-					import { defineMock } from 'yapi-gpt-mock';
+					import { defineMock } from 'yapi-ai-mock';
 					`
 					}
        

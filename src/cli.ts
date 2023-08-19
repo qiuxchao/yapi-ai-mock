@@ -10,7 +10,7 @@ import mockServer from '@/mock/server';
 import { loadModule } from '@/utils';
 import { CONFIG_TEMP_PATH } from './constant';
 
-const ygm = async (config: ConfigWithHooks) => {
+const yam = async (config: ConfigWithHooks) => {
 	const generator = new Generator(config);
 	const spinner1 = ora('正在读取并解析配置文件...').start();
 	const spinner2 = ora('正在生成代码并写入文件...');
@@ -49,8 +49,8 @@ const run = async (options?: { configFile?: string }, isServe = false) => {
 
 	if (!options?.configFile) {
 		cwd = process.cwd();
-		configTSFile = path.join(cwd, 'ygm.config.ts');
-		configJSFile = path.join(cwd, 'ygm.config.js');
+		configTSFile = path.join(cwd, 'yam.config.ts');
+		configJSFile = path.join(cwd, 'yam.config.js');
 		const configTSFileExist = await fs.pathExists(configTSFile);
 		const configJSFileExist = !configTSFileExist && (await fs.pathExists(configJSFile));
 		configFileExist = configTSFileExist || configJSFileExist;
@@ -73,19 +73,19 @@ const run = async (options?: { configFile?: string }, isServe = false) => {
 		await mockServer((config as ServerConfig)?.mockServer);
 		return;
 	}
-	await ygm(config);
+	await yam(config);
 };
 
 if (require.main === module) {
 	const argv = yargs(process.argv)
-		.usage('使用：npx ygm [选项]')
+		.usage('使用：npx yam [选项]')
 		.alias('h', ['help'])
 		.alias('c', 'config')
 		.alias('version', 'v')
-		.example('$ npx ygm', '生成 mock 代码')
-		.example('$ npx ygm -c=配置文件路径', '指定配置文件并生成 mock 代码')
-		.example('$ npx ygm serve', '启动 mock 服务器').argv;
-	// 指定配置文件运行：ygm -c|-config=配置文件路径
+		.example('$ npx yam', '生成 mock 代码')
+		.example('$ npx yam -c=配置文件路径', '指定配置文件并生成 mock 代码')
+		.example('$ npx yam serve', '启动 mock 服务器').argv;
+	// 指定配置文件运行：yam -c|-config=配置文件路径
 	run(
 		{
 			configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
@@ -94,4 +94,4 @@ if (require.main === module) {
 	);
 }
 
-export default ygm;
+export default yam;
