@@ -32,7 +32,7 @@ import {
 	httpGet,
 	throwError,
 	removeInvalidProperty,
-	preproccessMockResult,
+	proccessMockResult,
 } from './utils';
 import * as fs from 'fs-extra';
 import path from 'path';
@@ -400,9 +400,10 @@ export class Generator {
 					Object.keys(mockResult).map(async id => {
 						const interfaceInfo = interfaceList.find(i => i._id === Number(id));
 						if (interfaceInfo) {
-							const mockCode = isFunction(syntheticalConfig.preproccessMockResult)
-								? syntheticalConfig.preproccessMockResult(mockResult[Number(id)], interfaceInfo)
-								: preproccessMockResult(mockResult[Number(id)], interfaceInfo);
+							// mock 结果处理
+							isFunction(syntheticalConfig.proccessMockResult)
+								? syntheticalConfig.proccessMockResult(mockResult[Number(id)], interfaceInfo)
+								: proccessMockResult(mockResult[Number(id)], interfaceInfo);
 							interfaceInfo._mockCode = mockResult[Number(id)]
 								? JSON.stringify(mockResult[Number(id)])
 								: '';

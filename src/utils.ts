@@ -125,7 +125,7 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
 };
 
 /** 处理 mock 结果 */
-export const preproccessMockResult = (mockResult: any, interfaceInfo: Interface) => {
+export const proccessMockResult = (mockResult: any, interfaceInfo: Interface) => {
 	if (mockResult?.hasOwnProperty('code')) {
 		mockResult.code = 200;
 	}

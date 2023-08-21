@@ -558,18 +558,27 @@ export interface ServerConfig extends SharedConfig {
 	 */
 	mockServer?: MockServerConfig;
 
-	/** mock 代码片段。 */
+	/**
+	 * mock 代码片段。
+	 *
+	 * 使用此方法可以自定义 mock 代码片段，如果不设置，则使用默认的 mock 代码片段。
+	 */
 	mockStatement?: (mockConstruction: MockConstruction) => string;
 
 	/**
 	 * 生成的文件顶部引入部分的代码片段。
+	 * 
+	 * @default import mockjs from 'mockjs';
+							import { defineMock } from 'yapi-ai-mock';
 	 */
 	mockImportStatement?: () => string;
 
 	/**
-	 * mock 结果预处理。
+	 * mock 结果处理。
+	 *
+	 * 对 ai 返回的 mock 结果进行处理，使其符合预期。
 	 */
-	preproccessMockResult?: (mockResult: any, interfaceInfo: Interface) => any;
+	proccessMockResult?: (mockResult: any, interfaceInfo: Interface) => void;
 }
 
 /** 命令行钩子 */
@@ -597,7 +606,7 @@ export interface MockConstruction {
 	path: string;
 	/** 请求方法 */
 	method: Method;
-	/** mock 代码 */
+	/** ai 生成的 mock 代码 */
 	mockCode: string;
 	/**
 	 * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
