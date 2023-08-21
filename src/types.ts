@@ -1,5 +1,5 @@
 import { ParsedPath } from 'path';
-import { OmitStrict, LiteralUnion, OneOrMore, AsyncOrSync } from 'vtils/types';
+import { OmitStrict, LiteralUnion, AsyncOrSync } from 'vtils/types';
 export interface ChangeCase {
 	/**
 	 * @example
@@ -78,11 +78,6 @@ export interface ChangeCase {
 	upperCaseFirst: (value: string) => string;
 }
 
-/** 混合的配置。 */
-export type SyntheticalConfig = Partial<
-	ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
->;
-
 /** 请求方式 */
 export enum Method {
 	GET = 'GET',
@@ -160,10 +155,26 @@ export enum Required {
 	true = '1',
 }
 
-/** 扩展接口定义 */
-export interface ExtendedInterface extends Interface {
-	parsedPath: ParsedPath;
+/** 分类信息 */
+export interface Category {
+	/** ID */
+	_id: number;
+	/** 分类在 YApi 上的地址（自行实现） */
+	_url: string;
+	/** 分类名称 */
+	name: string;
+	/** 分类备注 */
+	desc: string;
+	/** 分类接口列表 */
+	list: InterfaceList;
+	/** 创建时间（unix时间戳） */
+	add_time: number;
+	/** 更新时间（unix时间戳） */
+	up_time: number;
 }
+
+/** 分类列表，对应数据导出的 json 内容 */
+export type CategoryList = Category[];
 
 /** 接口定义 */
 export interface Interface {
@@ -270,29 +281,13 @@ export interface Interface {
 	[key: string]: any;
 }
 
-/** 接口列表 */
-export type InterfaceList = Interface[];
-
-/** 分类信息 */
-export interface Category {
-	/** ID */
-	_id: number;
-	/** 分类在 YApi 上的地址（自行实现） */
-	_url: string;
-	/** 分类名称 */
-	name: string;
-	/** 分类备注 */
-	desc: string;
-	/** 分类接口列表 */
-	list: InterfaceList;
-	/** 创建时间（unix时间戳） */
-	add_time: number;
-	/** 更新时间（unix时间戳） */
-	up_time: number;
+/** 扩展接口定义 */
+export interface ExtendedInterface extends Interface {
+	parsedPath: ParsedPath;
 }
 
-/** 分类列表，对应数据导出的 json 内容 */
-export type CategoryList = Category[];
+/** 接口列表 */
+export type InterfaceList = Interface[];
 
 /** 项目信息 */
 export interface Project {
@@ -591,12 +586,12 @@ export interface CliHooks {
 	complete?: () => AsyncOrSync<void>;
 }
 
+/** 配置。 */
+export type Config = ServerConfig | ServerConfig[];
+
 export type ConfigWithHooks = Config & {
 	hooks?: CliHooks;
 };
-
-/** 配置。 */
-export type Config = ServerConfig | ServerConfig[];
 
 /** mock 代码片段配置 */
 export interface MockConstruction {
@@ -615,3 +610,8 @@ export interface MockConstruction {
 	 */
 	hash: string;
 }
+
+/** 混合的配置。 */
+export type SyntheticalConfig = Partial<
+	ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
+>;

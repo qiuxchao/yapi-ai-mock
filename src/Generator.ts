@@ -111,7 +111,7 @@ export class Generator {
 					projects.push(
 						...castArray(project.token).map(token => ({
 							...project,
-							token: token,
+							token,
 						})),
 					);
 					return projects;
@@ -147,7 +147,7 @@ export class Generator {
 									categoryIds.map<Promise<void>>(async (id, categoryIndex2) => {
 										categoryConfig = {
 											...categoryConfig,
-											id: id,
+											id,
 										};
 										const syntheticalConfig: SyntheticalConfig = {
 											...serverConfig,
@@ -248,7 +248,7 @@ export class Generator {
 	}
 
 	/** 生成文件代码 */
-	async generateCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
+	generateCode(syntheticalConfig: SyntheticalConfig, interfaceInfo: Interface) {
 		const extendedInterfaceInfo: ExtendedInterface = {
 			...interfaceInfo,
 			parsedPath: path.parse(interfaceInfo.path),
@@ -376,7 +376,7 @@ export class Generator {
 		// 输入按长度分组
 		const _inputGroup = () => {
 			const input: Record<number, object> = {};
-			[...responseBodyList].forEach((item, index) => {
+			[...responseBodyList].forEach(item => {
 				const _input = JSON.stringify({ ...input, [item.id]: item.res_body });
 				if (_input.length < surplusLength) {
 					input[item.id] = item.res_body;
@@ -426,10 +426,10 @@ export class Generator {
 	}
 
 	/** 写入文件 */
-	async write(outputFileList: OutputFileList) {
+	write(outputFileList: OutputFileList) {
 		return Promise.all(
 			Object.keys(outputFileList).map(async outputFilePath => {
-				let { content, syntheticalConfig } = outputFileList[outputFilePath];
+				const { content, syntheticalConfig } = outputFileList[outputFilePath];
 
 				// 始终写入主文件
 				const rawOutputContent = dedent`
@@ -488,7 +488,7 @@ export class Generator {
 		return [result, hasError];
 	}
 
-	async tsc(file: string) {
+	tsc(file: string) {
 		return new Promise<void>(resolve => {
 			// add this to fix bug that not-generator-file-on-window
 			const command = `${require('os').platform() === 'win32' ? 'node ' : ''}${JSON.stringify(
