@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs-extra';
 import consola from 'consola';
-import { ConfigWithHooks, ServerConfig } from '@/types';
+import { Config } from '@/types';
 import ora from 'ora';
 import yargs from 'yargs';
 import { wait } from 'vtils';
@@ -9,8 +9,15 @@ import { Generator } from '@/Generator';
 import mockServer from '@/mock/server';
 import { loadModule } from '@/utils';
 import { CONFIG_TEMP_PATH } from './constant';
+import dotenv from 'dotenv';
 
-const yam = async (config: ConfigWithHooks) => {
+const yam = async (config: Config) => {
+	// 注入环境变量
+	const { envPath } = config;
+	const hasEnvPath = await fs.pathExists(path.resolve(process.cwd(), envPath || '.env'));
+	if (hasEnvPath) {
+		dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
+	}
 	const generator = new Generator(config);
 	const spinner1 = ora('正在读取并解析配置文件...').start();
 	const spinner2 = ora('正在生成代码并写入文件...');
@@ -68,9 +75,9 @@ const run = async (options?: { configFile?: string }, isServe = false) => {
 		);
 	}
 	consola.success(`找到配置文件: ${configFile}`);
-	const { content: config } = await loadModule<ConfigWithHooks>(configFile, CONFIG_TEMP_PATH);
+	const { content: config } = await loadModule<Config>(configFile, CONFIG_TEMP_PATH);
 	if (isServe) {
-		await mockServer((config as ServerConfig)?.mockServer);
+		await mockServer(config.mockServer);
 		return;
 	}
 	await yam(config);

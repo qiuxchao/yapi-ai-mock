@@ -4,7 +4,7 @@ module.exports = {
 		es2021: true,
 		node: true,
 	},
-	extends: ['@qiuxc', 'plugin:@typescript-eslint/recommended'],
+	extends: ['@qiuxc'],
 	parserOptions: {
 		ecmaVersion: 'latest',
 	},

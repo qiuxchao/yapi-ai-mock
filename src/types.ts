@@ -1,5 +1,7 @@
 import { ParsedPath } from 'path';
 import { OmitStrict, LiteralUnion, AsyncOrSync } from 'vtils/types';
+import { Error, Success, TypeChatLanguageModel } from './chat/typechat';
+import { AxiosStatic } from 'axios';
 export interface ChangeCase {
 	/**
 	 * @example
@@ -491,23 +493,48 @@ export interface MockServerConfig {
 
 export interface ServerConfig extends SharedConfig {
 	/**
-	 * yapi 服务地址。也可以通过 `env` 中的 `YAPI_SERVER_URL` 来配置。
+	 * yapi 服务地址。
 	 *
 	 * @example 'http://yapi.foo.bar'
 	 */
-	serverUrl?: string;
+	serverUrl: string;
 
 	/**
 	 * 项目列表
 	 */
 	projects: ProjectConfig[];
+}
+
+/** 命令行钩子 */
+export interface CliHooks {
+	/** 生成成功时触发 */
+	success?: () => AsyncOrSync<void>;
+	/** 生成失败时触发 */
+	fail?: () => AsyncOrSync<void>;
+	/** 生成完毕时触发（无论成功、失败） */
+	complete?: () => AsyncOrSync<void>;
+}
+
+/** 配置。 */
+export interface Config {
+	/**
+	 * yapi 服务相关配置。
+	 *
+	 * 可以配置为一个列表，用于同时生成多个 yapi 服务的接口。
+	 */
+	yapi: ServerConfig | ServerConfig[];
+
+	/**
+	 * 钩子。
+	 */
+	hooks?: CliHooks;
 
 	/**
 	 * .env 文件路径。默认为项目根目录下的 `.env`。
 	 *
 	 * 可以是 `相对路径` 或 `绝对路径`。
 	 *
-	 * 可以在其中配置 `YAPI_SERVER_URL`（yapi 服务地址） 和 `YAM_GPT_URL`（gpt 接口地址）。
+	 * 可以在其中配置 `OPENAI_API_KEY` 等环境变量。
 	 *
 	 * @default '.env'
 	 */
@@ -532,24 +559,45 @@ export interface ServerConfig extends SharedConfig {
 	mockPrefix?: string;
 
 	/**
-	 * gpt 配置。
+	 * 自定义 ai 聊天模型。如果在 .env 中配置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai chatgpt 的模型）
+	 *
+	 * 此选项的配置参考 [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
+	 *
+	 * @example (success, error) => ({
+	 * 	complete: async (prompt) => {
+				try {
+					const response = await axios('https://api.openai.com/v1/chat/completions', {
+						method: 'POST',
+						headers: {
+							Authorization: `Bearer ${apiKey}`,
+							'Content-Type': 'application/json',
+						},
+						data: JSON.stringify({
+							temperature: 0,
+							n: 1,
+							messages: [{ role: 'user', content: prompt }],
+						}),
+					});
+					const json = response.data;
+					return success((json?.data?.content as string) ?? '');
+				} catch (err) {
+					return error(`mock 请求错误 ${err}`);
+				}
+			}
+    })
 	 */
-	gpt?: {
-		/**
-		 * gpt 接口地址。也可以通过 `env` 中的 `YAM_GPT_URL` 来配置。
-		 * 接口请求格式参考：https://platform.openai.com/docs/api-reference/chat/create
-		 */
-		url?: string;
-
-		/**
-		 * gpt 支持的最大消息字符数。（实际发送时会用这个值减去提示词，得到的才是真实的字符数）
-		 * @default 4096
-		 */
-		maxTokens?: number;
-	};
+	chatModel?: (
+		axios: AxiosStatic,
+		success: <T>(data: T) => Success<T>,
+		error: (message: string) => Error,
+	) => TypeChatLanguageModel;
 
 	/**
 	 * mock 服务配置。
+	 *
+	 * mock 服务是一个 http 服务，用于拦截请求并返回 mock 数据。
+	 *
+	 * 当你的项目不是 webpack 或 vite 等工具构建的 SPA 项目时，应当使用 mock 服务。
 	 */
 	mockServer?: MockServerConfig;
 
@@ -576,23 +624,6 @@ export interface ServerConfig extends SharedConfig {
 	proccessMockResult?: (mockResult: any, interfaceInfo: Interface) => void;
 }
 
-/** 命令行钩子 */
-export interface CliHooks {
-	/** 生成成功时触发 */
-	success?: () => AsyncOrSync<void>;
-	/** 生成失败时触发 */
-	fail?: () => AsyncOrSync<void>;
-	/** 生成完毕时触发（无论成功、失败） */
-	complete?: () => AsyncOrSync<void>;
-}
-
-/** 配置。 */
-export type Config = ServerConfig | ServerConfig[];
-
-export type ConfigWithHooks = Config & {
-	hooks?: CliHooks;
-};
-
 /** mock 代码片段配置 */
 export interface MockConstruction {
 	/** 注释 */
@@ -613,5 +644,5 @@ export interface MockConstruction {
 
 /** 混合的配置。 */
 export type SyntheticalConfig = Partial<
-	ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
+	Config & ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
 >;

@@ -39,11 +39,11 @@ import path from 'path';
 import dayjs from 'dayjs';
 import prettier from 'prettier';
 import { exec } from 'child_process';
-import dotenv from 'dotenv';
 import chat from './chat';
 import consola from 'consola';
 import { Ora } from 'ora';
 import { SHA256 } from 'crypto-js';
+import { OPENAI_MAX_TOKENS } from './constant';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -55,7 +55,9 @@ interface OutputFileList {
 /** 生成代码 */
 export class Generator {
 	/** 配置 */
-	private config: ServerConfig[] = [];
+	private config: Omit<Config, 'yapi'>;
+	/** yapi 服务配置 */
+	private serverConfig: ServerConfig[] = [];
 	/** 总任务数 */
 	private total: number = 0;
 	/** 完成的任务数 */
@@ -67,33 +69,21 @@ export class Generator {
 		config: Config,
 		private options: { cwd: string } = { cwd: process.cwd() },
 	) {
-		// config 可能是对象或数组，统一为数组
-		this.config = castArray(config);
+		// server config 可能是对象或数组，统一为数组
+		this.serverConfig = castArray(config.yapi);
+		this.config = omit(config, ['yapi']);
 	}
 
 	/** 前置方法，统一配置项 */
 	async prepare(): Promise<void> {
-		this.config = await Promise.all(
+		this.serverConfig = await Promise.all(
 			// config 可能是对象或数组，统一为数组
-			this.config.map(async item => {
-				const { envPath } = item;
-				dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
-				const serverUrl = process.env['YAPI_SERVER_URL'] || item?.serverUrl?.replace(/\/+$/, '');
-				const gptUrl = process.env['YAM_GPT_URL'] || item.gpt?.url;
-				if (!serverUrl)
-					throwError(
-						'未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段或 env 文件中的 YAPI_SERVER_URL 字段配置',
-					);
-				if (!gptUrl)
-					throwError(
-						'未配置 gpt 接口地址，请通过配置文件中的 gpt.url 字段或 env 文件中的 YAM_GPT_URL 字段配置',
-					);
-				// 解析 env 中的配置
+			this.serverConfig.map(async item => {
+				const serverUrl = item.serverUrl?.replace(/\/+$/, '');
+				if (!serverUrl) {
+					throwError('未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段配置');
+				}
 				item.serverUrl = serverUrl;
-				item.gpt = {
-					...(item.gpt ?? {}),
-					url: gptUrl,
-				};
 				return item;
 			}),
 		);
@@ -106,7 +96,7 @@ export class Generator {
 			interfaceInfo: Interface;
 		}[] = [];
 		await Promise.all(
-			this.config.map(async (serverConfig, serverIndex) => {
+			this.serverConfig.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
 					projects.push(
 						...castArray(project.token).map(token => ({
@@ -230,20 +220,10 @@ export class Generator {
 
 	/** 生成 */
 	async generate(spinner: Ora): Promise<void> {
-		// 根据 `gpt.url` 对所有接口进行分组
-		const interfaceListGrouyByGptUrl = groupBy(
-			this.interfaceList,
-			item => item.syntheticalConfig.gpt?.url,
-		);
-		await Promise.all(
-			Object.keys(interfaceListGrouyByGptUrl).map(async gptUrl => {
-				const interfaceList = interfaceListGrouyByGptUrl[gptUrl];
-				await this.genMockCode(
-					interfaceList[0].syntheticalConfig,
-					interfaceList.map(item => item.interfaceInfo),
-					spinner,
-				);
-			}),
+		await this.genMockCode(
+			this.interfaceList[0].syntheticalConfig,
+			this.interfaceList.map(item => item.interfaceInfo),
+			spinner,
 		);
 	}
 
@@ -368,11 +348,13 @@ export class Generator {
 		interfaceList: InterfaceList,
 		spinner: Ora,
 	) {
-		const { maxTokens = 4096 } = syntheticalConfig.gpt!;
+		const maxLength = Math.floor(
+			Number(process.env['OPENAI_MAX_TOKENS'] || OPENAI_MAX_TOKENS) * 1.5,
+		);
 		const responseBodyList = interfaceList.map(i => ({ id: i._id, res_body: i._parsedResBody }));
 		const inputList: string[] = [];
 		// 剩余长度
-		const surplusLength = maxTokens - 1000;
+		const surplusLength = maxLength - 1000;
 		// 输入按长度分组
 		const _inputGroup = () => {
 			const input: Record<number, object> = {};
@@ -393,7 +375,7 @@ export class Generator {
 		// 根据分组的输入，获取 mock 代码
 		await Promise.all(
 			inputList.map(async input => {
-				const mockResult = await chat(syntheticalConfig.gpt!.url!, input);
+				const mockResult = await chat(input, this.config);
 				const outputFileList: OutputFileList = Object.create(null);
 				// 生成代码
 				await Promise.all(
@@ -407,7 +389,7 @@ export class Generator {
 							interfaceInfo._mockCode = mockResult[Number(id)]
 								? JSON.stringify(mockResult[Number(id)])
 								: '';
-							const code = await this.generateCode(syntheticalConfig, interfaceInfo);
+							const code = this.generateCode(syntheticalConfig, interfaceInfo);
 							outputFileList[interfaceInfo._outputFilePath] = {
 								syntheticalConfig,
 								content: [code],
