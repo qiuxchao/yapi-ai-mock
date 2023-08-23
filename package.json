@@ -1,12 +1,13 @@
 {
 	"name": "yapi-ai-mock",
 	"version": "1.0.0",
-	"description": "通过LLM模型，将API文档生成为本地的Mock文件",
+	"description": "通过LLM模型，将YAPI文档生成为本地的Mock文件。",
 	"keywords": [
 		"yapi",
 		"codegen",
 		"mockjs",
-		"chatgpt"
+		"llm",
+		"ai"
 	],
 	"main": "./lib/index.cjs",
 	"types": "./lib/index.d.ts",
@@ -49,7 +50,6 @@
 		"ora": "^3.4.0",
 		"path-to-regexp": "^6.2.1",
 		"prettier": "^3.0.0",
-		"typechat": "^0.0.10",
 		"vite": "^3.2.0",
 		"vtils": "^4.85.3",
 		"yargs": "^16.2.0"
@@ -70,6 +70,7 @@
 		"chokidar-cli": "^3.0.0",
 		"eslint": "^8.47.0",
 		"typescript": "^5.1.6",
-		"unbuild": "^1.2.1"
+		"unbuild": "^1.2.1",
+		"typechat": "^0.0.10"
 	}
 }

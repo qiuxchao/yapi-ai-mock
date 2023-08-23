@@ -16,5 +16,8 @@ export const CONFIG_TEMP_PATH = 'node_modules/.cache/.yam_config';
 /** OpenAI API 密钥 */
 export const OPENAI_API_KEY = '';
 
+/** OpenAI API 接口 */
+export const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+
 /** 最大支持的 token */
 export const OPENAI_MAX_TOKENS = 4096;

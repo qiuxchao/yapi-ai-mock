@@ -9,7 +9,6 @@ import {
 	isFunction,
 	indent,
 	cloneDeepFast,
-	groupBy,
 } from 'vtils';
 import * as changeCase from 'change-case';
 import {
@@ -55,7 +54,7 @@ interface OutputFileList {
 /** 生成代码 */
 export class Generator {
 	/** 配置 */
-	private config: Omit<Config, 'yapi'>;
+	private config: Omit<Config, 'yapi'> = {};
 	/** yapi 服务配置 */
 	private serverConfig: ServerConfig[] = [];
 	/** 总任务数 */
@@ -158,7 +157,7 @@ export class Generator {
 													interfaceInfo.path.split('/');
 												interfaceInfo._outputFilePath = path.resolve(
 													this.options.cwd,
-													`${syntheticalConfig.mockDir || 'mock'}/${changeCase.camelCase(
+													`${this.config?.mockDir || 'mock'}/${changeCase.camelCase(
 														`${projectName}-${categoryName}`,
 													)}${
 														interfacePath.length
@@ -324,14 +323,14 @@ export class Generator {
 		};
 
 		// 通过配置文件中的 `mockStatement` 方法来生成 mock 代码
-		const code = isFunction(syntheticalConfig.mockStatement)
-			? syntheticalConfig.mockStatement(mockConstruction)
+		const code = isFunction(this.config?.mockStatement)
+			? this.config?.mockStatement(mockConstruction)
 			: indent`
 			/* hash: ${mockConstruction.hash} */
 
 			${mockConstruction.comment}
 			export default defineMock({
-				url: '${syntheticalConfig.mockPrefix || '/mock'}${mockConstruction.path}',
+				url: '${this.config?.mockPrefix || '/mock'}${mockConstruction.path}',
 				method: '${mockConstruction.method}',
 				body: mockjs.mock(
 					${mockConstruction.mockCode || '{}'}
@@ -383,8 +382,8 @@ export class Generator {
 						const interfaceInfo = interfaceList.find(i => i._id === Number(id));
 						if (interfaceInfo) {
 							// mock 结果处理
-							isFunction(syntheticalConfig.proccessMockResult)
-								? syntheticalConfig.proccessMockResult(mockResult[Number(id)], interfaceInfo)
+							isFunction(this.config?.proccessMockResult)
+								? this.config?.proccessMockResult(mockResult[Number(id)], interfaceInfo)
 								: proccessMockResult(mockResult[Number(id)], interfaceInfo);
 							interfaceInfo._mockCode = mockResult[Number(id)]
 								? JSON.stringify(mockResult[Number(id)])
@@ -423,7 +422,7 @@ export class Generator {
           // @ts-ignore
 
 					${
-						syntheticalConfig?.mockImportStatement?.() ??
+						this.config?.mockImportStatement?.() ??
 						`
 					import mockjs from 'mockjs';
 					import { defineMock } from 'yapi-ai-mock';

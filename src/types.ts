@@ -394,9 +394,9 @@ export interface CommentConfig {
 export interface SharedConfig {
 	/**
 	 * 要生成的目标代码类型。
-	 * 默认为 `javascript`。
+	 * 默认为 `typescript`。
 	 *
-	 * @default 'javascript'
+	 * @default 'typescript'
 	 */
 	target?: 'javascript' | 'typescript';
 
@@ -559,37 +559,46 @@ export interface Config {
 	mockPrefix?: string;
 
 	/**
-	 * 自定义 ai 聊天模型。如果在 .env 中配置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai chatgpt 的模型）
+	 * 自定义 LLM 模型。如果在 `.env` 文件中配置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
 	 *
-	 * 此选项的配置参考 [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
 	 *
-	 * @example (success, error) => ({
+	 * @param axios axios 方法
+	 * @param success 成功回调
+	 * @param error 失败回调
+	 * @param apiEndpoint api 地址，可通过 `.env` 文件中的 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
+	 *
+	 * @returns [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
+	 *
+	 *
+	 * @example
+	 *(axios, success, error, apiEndpoint) => ({
 	 * 	complete: async (prompt) => {
-				try {
-					const response = await axios('https://api.openai.com/v1/chat/completions', {
-						method: 'POST',
-						headers: {
-							Authorization: `Bearer ${apiKey}`,
-							'Content-Type': 'application/json',
-						},
-						data: JSON.stringify({
-							temperature: 0,
-							n: 1,
-							messages: [{ role: 'user', content: prompt }],
-						}),
-					});
-					const json = response.data;
-					return success((json?.data?.content as string) ?? '');
-				} catch (err) {
-					return error(`mock 请求错误 ${err}`);
-				}
-			}
-    })
+	 *			try {
+	 *				const response = await axios(apiEndpoint, {
+	 *					method: 'POST',
+	 *					headers: {
+	 *						Authorization: `Bearer ${apiKey}`,
+	 *						'Content-Type': 'application/json',
+	 *					},
+	 *					data: JSON.stringify({
+	 *						temperature: 0,
+	 *						n: 1,
+	 *						messages: [{ role: 'user', content: prompt }],
+	 *					}),
+	 *				});
+	 *				const json = response.data;
+	 *				return success((json?.data?.content as string) ?? '');
+	 *			} catch (err) {
+	 *				return error(`Mock fetch error: ${err}`);
+	 *			}
+	 *		}
+	 *})
 	 */
-	chatModel?: (
+	createLanguageModel?: (
 		axios: AxiosStatic,
 		success: <T>(data: T) => Success<T>,
 		error: (message: string) => Error,
+		apiEndpoint: string,
 	) => TypeChatLanguageModel;
 
 	/**
@@ -604,22 +613,61 @@ export interface Config {
 	/**
 	 * mock 代码片段。
 	 *
-	 * 使用此方法可以自定义 mock 代码片段，如果不设置，则使用默认的 mock 代码片段。
+	 * 使用此方法可以自定义生成结果中的 mock 代码片段，如果不设置，则使用默认的 mock 代码片段。
+	 *
+	 * @default
+	 *
+	 * ```js
+	 * `
+	 * /* hash: ${mockConstruction.hash} *\/
+	 * ${mockConstruction.comment}
+	 * export default defineMock({
+	 * 	url: '${config.mockPrefix || '/mock'}${mockConstruction.path}',
+	 * 	method: '${mockConstruction.method}',
+	 * 	body: mockjs.mock(
+	 * 		${mockConstruction.mockCode || '{}'}
+	 * 	),
+	 * });
+	 * `
+	 * ```
 	 */
 	mockStatement?: (mockConstruction: MockConstruction) => string;
 
 	/**
 	 * 生成的文件顶部引入部分的代码片段。
-	 * 
-	 * @default import mockjs from 'mockjs';
-							import { defineMock } from 'yapi-ai-mock';
+	 *
+	 * @default
+	 * ```js
+	 * `
+	 * import mockjs from 'mockjs';
+	 * import { defineMock } from 'yapi-ai-mock';
+	 * `
+	 * ```
 	 */
 	mockImportStatement?: () => string;
 
 	/**
 	 * mock 结果处理。
 	 *
-	 * 对 ai 返回的 mock 结果进行处理，使其符合预期。
+	 * 对 LLM 返回的 mock 结果进行处理，使其符合预期。
+	 *
+	 * 如果不设置，则直接使用 LLM 返回的 mock 结果。
+	 *
+	 * @param mockResult LLM 返回的 mock 结果
+	 * @param interfaceInfo 接口信息
+	 *
+	 * @example
+	 *
+	 * ```js
+	 * (mockResult, interfaceInfo) => {
+	 * 	if (mockResult?.hasOwnProperty('code')) {
+	 * 		mockResult.code = 200;
+	 * 	}
+	 * 	if (mockResult?.hasOwnProperty('message')) {
+	 * 		mockResult.message = 'success';
+	 * 	}
+	 * }
+	 * ```
 	 */
 	proccessMockResult?: (mockResult: any, interfaceInfo: Interface) => void;
 }
@@ -632,7 +680,7 @@ export interface MockConstruction {
 	path: string;
 	/** 请求方法 */
 	method: Method;
-	/** ai 生成的 mock 代码 */
+	/** LLM 生成的 mock 代码 */
 	mockCode: string;
 	/**
 	 * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
@@ -644,5 +692,5 @@ export interface MockConstruction {
 
 /** 混合的配置。 */
 export type SyntheticalConfig = Partial<
-	Config & ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
+	ServerConfig & ServerConfig['projects'][0] & ServerConfig['projects'][0]['categories'][0]
 >;

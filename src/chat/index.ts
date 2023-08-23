@@ -1,4 +1,4 @@
-import { OPENAI_API_KEY } from '@/constant';
+import { OPENAI_API_KEY, OPENAI_ENDPOINT } from '@/constant';
 import {
 	TypeChatLanguageModel,
 	createJsonTranslator,
@@ -16,34 +16,17 @@ import { throwError } from '@/utils';
 
 const chat = async (question: string, config: Omit<Config, 'yapi'>) => {
 	const openaiApiKey = process.env.OPENAI_API_KEY || OPENAI_API_KEY;
-	if (!openaiApiKey || !config?.chatModel) {
-		throwError('未配置聊天模型，请配置 env.OPENAI_API_KEY 环境变量或者 config.chatModel');
+	if (!openaiApiKey || !config?.createLanguageModel) {
+		throwError('未配置 LLM, 请配置 env.OPENAI_API_KEY 环境变量或者 config.createLanguageModel');
 	}
 	const model: TypeChatLanguageModel = openaiApiKey
 		? createLanguageModel(process.env)
-		: config?.chatModel?.(axios, success, error);
-
-	// {
-	// 	complete: async prompt => {
-	// 		try {
-	// 			const response = await axios(gptUrl, {
-	// 				method: 'POST',
-	// 				headers: {
-	// 					'Content-Type': 'application/json',
-	// 				},
-	// 				data: JSON.stringify({
-	// 					temperature: 0,
-	// 					n: 1,
-	// 					messages: [{ role: 'user', content: prompt }],
-	// 				}),
-	// 			});
-	// 			const json = response.data;
-	// 			return success((json?.data?.content as string) ?? '');
-	// 		} catch (err) {
-	// 			return error(`mock 请求错误 ${err}`);
-	// 		}
-	// 	},
-	// };
+		: config.createLanguageModel?.(
+				axios,
+				success,
+				error,
+				process.env.OPENAI_ENDPOINT || OPENAI_ENDPOINT,
+		  );
 	const schema = fs.readFileSync(path.join(__dirname, 'mockSchema.ts'), 'utf8');
 	const translator = createJsonTranslator<MockResponse>(model, schema, 'MockResponse');
 	const response = await translator.translate(question);
