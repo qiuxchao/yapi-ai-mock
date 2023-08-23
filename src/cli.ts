@@ -8,15 +8,15 @@ import { wait } from 'vtils';
 import { Generator } from '@/Generator';
 import mockServer from '@/mock/server';
 import { loadModule } from '@/utils';
-import { CONFIG_TEMP_PATH } from './constant';
+import { CONFIG_TEMP_PATH, ENV_FILE_PATH } from '@/constant';
 import dotenv from 'dotenv';
 
 const yam = async (config: Config) => {
 	// 注入环境变量
 	const { envPath } = config;
-	const hasEnvPath = await fs.pathExists(path.resolve(process.cwd(), envPath || '.env'));
+	const hasEnvPath = await fs.pathExists(path.resolve(process.cwd(), envPath || ENV_FILE_PATH));
 	if (hasEnvPath) {
-		dotenv.config({ path: path.resolve(process.cwd(), envPath || '.env') });
+		dotenv.config({ path: path.resolve(process.cwd(), envPath || ENV_FILE_PATH) });
 	}
 	const generator = new Generator(config);
 	const spinner1 = ora('正在读取并解析配置文件...').start();

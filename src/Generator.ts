@@ -19,12 +19,12 @@ import {
 	Config,
 	ExtendedInterface,
 	Interface,
-	InterfaceList,
 	MockConstruction,
 	Project,
 	ProjectConfig,
 	ServerConfig,
 	SyntheticalConfig,
+	InterfaceList,
 } from './types';
 import {
 	getCachedPrettierOptions,
@@ -51,6 +51,11 @@ interface OutputFileList {
 	};
 }
 
+interface SyntheticalInterface {
+	syntheticalConfig: SyntheticalConfig;
+	interfaceInfo: Interface;
+}
+
 /** 生成代码 */
 export class Generator {
 	/** 配置 */
@@ -62,7 +67,7 @@ export class Generator {
 	/** 完成的任务数 */
 	private completed: number = 0;
 	/** 接口列表 */
-	private interfaceList: { syntheticalConfig: SyntheticalConfig; interfaceInfo: Interface }[] = [];
+	private interfaceList: SyntheticalInterface[] = [];
 
 	constructor(
 		config: Config,
@@ -90,10 +95,6 @@ export class Generator {
 
 	/** 拉取并解析接口数据 */
 	async resolve(): Promise<void> {
-		const allInterfaceList: {
-			syntheticalConfig: SyntheticalConfig;
-			interfaceInfo: Interface;
-		}[] = [];
 		await Promise.all(
 			this.serverConfig.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
@@ -199,7 +200,7 @@ export class Generator {
 											})
 											.filter(Boolean) as any;
 										interfaceList.sort((a, b) => a._id - b._id);
-										allInterfaceList.push(
+										this.interfaceList.push(
 											...interfaceList.map(interfaceInfo => ({
 												syntheticalConfig,
 												interfaceInfo,
@@ -213,16 +214,58 @@ export class Generator {
 				);
 			}),
 		);
-		this.interfaceList = allInterfaceList;
-		this.total = allInterfaceList.length;
+		this.total = this.interfaceList.length;
 	}
 
 	/** 生成 */
 	async generate(spinner: Ora): Promise<void> {
-		await this.genMockCode(
-			this.interfaceList[0].syntheticalConfig,
-			this.interfaceList.map(item => item.interfaceInfo),
-			spinner,
+		if (!this.interfaceList.length) return;
+		await this.genMockCode(spinner);
+	}
+
+	/** 写入文件 */
+	write(outputFileList: OutputFileList) {
+		return Promise.all(
+			Object.keys(outputFileList).map(async outputFilePath => {
+				const { content, syntheticalConfig } = outputFileList[outputFilePath];
+
+				// 始终写入主文件
+				const rawOutputContent = dedent`
+          /* tslint:disable */
+          /* eslint-disable */
+
+          /* 该文件工具自动生成，请勿直接修改！！！ */
+         
+          // @ts-ignore
+
+					${
+						this.config?.mockImportStatement?.() ??
+						`
+					import mockjs from 'mockjs';
+					import { defineMock } from 'yapi-ai-mock';
+					`
+					}
+       
+          ${content.join('\n\n').trim()}
+        `;
+
+				// ref: https://prettier.io/docs/en/options.html
+				const [prettyOutputContent] = await this.prettierFile(rawOutputContent);
+				const outputContent = `${dedent`
+          /* prettier-ignore-start */
+          ${prettyOutputContent}
+          /* prettier-ignore-end */
+        `}\n`;
+				await fs.outputFile(outputFilePath, outputContent);
+
+				// 如果要生成 JavaScript 代码，
+				// 则先对主文件进行 tsc 编译，主文件引用到的其他文件也会被编译，
+				// 然后，删除原始的 .tsx? 文件。
+				if (syntheticalConfig.target === 'javascript') {
+					await this.tsc(outputFilePath);
+					await Promise.all([fs.remove(outputFilePath).catch(noop)]);
+				}
+			}),
 		);
 	}
 
@@ -342,15 +385,14 @@ export class Generator {
 	}
 
 	/** 生成 mock 代码 */
-	async genMockCode(
-		syntheticalConfig: SyntheticalConfig,
-		interfaceList: InterfaceList,
-		spinner: Ora,
-	) {
+	async genMockCode(spinner: Ora) {
 		const maxLength = Math.floor(
 			Number(process.env['OPENAI_MAX_TOKENS'] || OPENAI_MAX_TOKENS) * 1.5,
 		);
-		const responseBodyList = interfaceList.map(i => ({ id: i._id, res_body: i._parsedResBody }));
+		const responseBodyList = this.interfaceList.map(i => ({
+			id: i?.interfaceInfo?._id,
+			res_body: i?.interfaceInfo?._parsedResBody,
+		}));
 		const inputList: string[] = [];
 		// 剩余长度
 		const surplusLength = maxLength - 1000;
@@ -379,8 +421,9 @@ export class Generator {
 				// 生成代码
 				await Promise.all(
 					Object.keys(mockResult).map(async id => {
-						const interfaceInfo = interfaceList.find(i => i._id === Number(id));
-						if (interfaceInfo) {
+						const { interfaceInfo, syntheticalConfig } =
+							this.interfaceList.find(i => i?.interfaceInfo?._id === Number(id)) || {};
+						if (interfaceInfo && syntheticalConfig) {
 							// mock 结果处理
 							isFunction(this.config?.proccessMockResult)
 								? this.config?.proccessMockResult(mockResult[Number(id)], interfaceInfo)
@@ -402,52 +445,6 @@ export class Generator {
 				this.completed += Object.keys(mockResult).length;
 				spinner.color = 'yellow';
 				spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
-			}),
-		);
-	}
-
-	/** 写入文件 */
-	write(outputFileList: OutputFileList) {
-		return Promise.all(
-			Object.keys(outputFileList).map(async outputFilePath => {
-				const { content, syntheticalConfig } = outputFileList[outputFilePath];
-
-				// 始终写入主文件
-				const rawOutputContent = dedent`
-          /* tslint:disable */
-          /* eslint-disable */
-
-          /* 该文件工具自动生成，请勿直接修改！！！ */
-         
-          // @ts-ignore
-
-					${
-						this.config?.mockImportStatement?.() ??
-						`
-					import mockjs from 'mockjs';
-					import { defineMock } from 'yapi-ai-mock';
-					`
-					}
-       
-          ${content.join('\n\n').trim()}
-        `;
-
-				// ref: https://prettier.io/docs/en/options.html
-				const [prettyOutputContent] = await this.prettierFile(rawOutputContent);
-				const outputContent = `${dedent`
-          /* prettier-ignore-start */
-          ${prettyOutputContent}
-          /* prettier-ignore-end */
-        `}\n`;
-				await fs.outputFile(outputFilePath, outputContent);
-
-				// 如果要生成 JavaScript 代码，
-				// 则先对主文件进行 tsc 编译，主文件引用到的其他文件也会被编译，
-				// 然后，删除原始的 .tsx? 文件。
-				if (syntheticalConfig.target === 'javascript') {
-					await this.tsc(outputFilePath);
-					await Promise.all([fs.remove(outputFilePath).catch(noop)]);
-				}
 			}),
 		);
 	}

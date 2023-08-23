@@ -13,15 +13,19 @@ import fs from 'fs-extra';
 import path from 'path';
 import { Config } from '..';
 import { throwError } from '@/utils';
+import { isFunction } from 'vtils';
 
 const chat = async (question: string, config: Omit<Config, 'yapi'>) => {
 	const openaiApiKey = process.env.OPENAI_API_KEY || OPENAI_API_KEY;
-	if (!openaiApiKey || !config?.createLanguageModel) {
-		throwError('未配置 LLM, 请配置 env.OPENAI_API_KEY 环境变量或者 config.createLanguageModel');
+	if (!openaiApiKey && !config?.createLanguageModel) {
+		throwError('未配置 LLM, 请配置 OPENAI_API_KEY 环境变量或者 config.createLanguageModel');
+	}
+	if (config?.createLanguageModel && !isFunction(config?.createLanguageModel)) {
+		throwError('config.createLanguageModel 必须是一个函数');
 	}
 	const model: TypeChatLanguageModel = openaiApiKey
 		? createLanguageModel(process.env)
-		: config.createLanguageModel?.(
+		: config.createLanguageModel!(
 				axios,
 				success,
 				error,

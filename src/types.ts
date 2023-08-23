@@ -530,7 +530,7 @@ export interface Config {
 	hooks?: CliHooks;
 
 	/**
-	 * .env 文件路径。默认为项目根目录下的 `.env`。
+	 * 环境变量文件路径。默认为项目根目录下的 `.env`。
 	 *
 	 * 可以是 `相对路径` 或 `绝对路径`。
 	 *
@@ -559,13 +559,13 @@ export interface Config {
 	mockPrefix?: string;
 
 	/**
-	 * 自定义 LLM 模型。如果在 `.env` 文件中配置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
+	 * 自定义 LLM 模型。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
 	 *
 	 *
 	 * @param axios axios 方法
 	 * @param success 成功回调
 	 * @param error 失败回调
-	 * @param apiEndpoint api 地址，可通过 `.env` 文件中的 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
+	 * @param apiEndpoint api 地址，可通过环境变量 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
 	 *
 	 * @returns [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
 	 *
