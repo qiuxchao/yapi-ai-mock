@@ -33,10 +33,7 @@ export default defineBuildConfig({
 	failOnWarn: false,
 	hooks: {
 		'build:done': async context => {
-			copy(
-				path.resolve(__dirname, 'src/chat/mockSchema.ts'),
-				path.resolve(__dirname, 'lib/mockSchema.ts'),
-			);
+			copy(path.resolve(__dirname, 'src/assets'), path.resolve(__dirname, 'lib/assets'));
 			const cliCJSContent = readFileSync(path.resolve(__dirname, 'lib/cli.cjs'), 'utf8');
 			writeFileSync(
 				path.resolve(__dirname, 'lib/cli.cjs'),

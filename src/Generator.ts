@@ -94,7 +94,7 @@ export class Generator {
 	}
 
 	/** 拉取并解析接口数据 */
-	async resolve(): Promise<void> {
+	async resolve(): Promise<number> {
 		await Promise.all(
 			this.serverConfig.map(async (serverConfig, serverIndex) => {
 				const projects = serverConfig.projects.reduce<ProjectConfig[]>((projects, project) => {
@@ -215,6 +215,7 @@ export class Generator {
 			}),
 		);
 		this.total = this.interfaceList.length;
+		return this.total;
 	}
 
 	/** 生成 */
@@ -389,13 +390,14 @@ export class Generator {
 		const maxLength = Math.floor(
 			Number(process.env['OPENAI_MAX_TOKENS'] || OPENAI_MAX_TOKENS) * 1.5,
 		);
+		const schema = fs.readFileSync(path.join(__dirname, 'assets/mockSchema.ts'), 'utf8');
+		// 剩余长度
+		const surplusLength = maxLength - (schema.length + 200);
 		const responseBodyList = this.interfaceList.map(i => ({
 			id: i?.interfaceInfo?._id,
 			res_body: i?.interfaceInfo?._parsedResBody,
 		}));
 		const inputList: string[] = [];
-		// 剩余长度
-		const surplusLength = maxLength - 1000;
 		// 输入按长度分组
 		const _inputGroup = () => {
 			const input: Record<number, object> = {};
@@ -416,7 +418,7 @@ export class Generator {
 		// 根据分组的输入，获取 mock 代码
 		await Promise.all(
 			inputList.map(async input => {
-				const mockResult = await chat(input, this.config);
+				const mockResult = await chat(input, schema, this.config);
 				const outputFileList: OutputFileList = Object.create(null);
 				// 生成代码
 				await Promise.all(

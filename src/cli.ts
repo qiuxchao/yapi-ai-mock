@@ -28,14 +28,18 @@ const yam = async (config: Config) => {
 		delayNotice.then(() => {
 			spinner1!.text = `正在获取并解析接口数据... (若长时间处于此状态，请检查是否有接口定义的数据过大导致拉取或解析缓慢)`;
 		});
-		await generator.resolve();
+		const total = await generator.resolve();
 		delayNotice.cancel();
 		spinner1.stop();
 		consola.success('接口数据获取并解析完毕');
-		spinner2.start();
-		await generator.generate(spinner2);
-		spinner2.stop();
-		consola.success('所有任务执行完毕');
+		if (total > 0) {
+			spinner2.start();
+			await generator.generate(spinner2);
+			spinner2.stop();
+			consola.success('代码生成完毕');
+		} else {
+			consola.success('未发现需要生成的接口');
+		}
 		await config!.hooks?.success?.();
 	} catch (err) {
 		spinner1?.stop();
