@@ -46,53 +46,60 @@ type Headers = Record<string, any>;
 
 export interface MockOptionsItem {
 	/**
-	 * 需要做mock的接口地址，
-	 * exp: `/mock/login`, `/mock/login/:id`
+	 * 需要做 mock 的接口地址，
+	 *
+	 * @example `/mock/login`
 	 */
 	url: string;
+
 	/**
-	 * 该接口支持的 请求方法，默认同时支持 GET 和 POST
-	 *
-	 * @default ['POST','GET']
+	 * 该接口支持的请求方法。
 	 */
-	method?: Method | Method[];
+	method: Method | Method[];
+
 	/**
-	 * 是否启动对该接口的mock，在多数场景下，我们进需要对部分接口进行 mock，
-	 * 而不是对所有配置了mock的请求进行全量mock，所以是否能够配置是否启用很重要
+	 * 是否启动对该接口的 mock，在多数场景下，我们进需要对部分接口进行 mock，
+	 * 而不是对所有配置了 mock 的请求进行全量 mock，所以是否能够配置是否启用很重要
 	 *
 	 * @default true
 	 */
 	enabled?: boolean;
+
 	/**
 	 * 配置响应体 header
 	 *
 	 * @default {'Content-Type':'application/json'}
 	 */
 	headers?: Headers;
+
 	/**
 	 * 配置 响应头状态码
 	 *
 	 * @default 200
 	 */
 	status?: number;
+
 	/**
 	 * 配置响应头状态文本
 	 *
 	 * @default 'OK'
 	 */
 	statusText?: string;
+
 	/**
 	 * 配置响应延迟时间, 单位： `ms`
 	 *
 	 * @default 0
 	 */
 	delay?: number;
+
 	/**
 	 * 配置响应体数据内容
 	 *
 	 * @default {}
 	 */
 	body?: ResponseBody;
+
 	/**
 	 * 如果需要设置复杂的响应内容，可以使用 response 方法，
 	 * 该方法是一个 middleware，你可以在这里拿到 http 请求的 req、res等信息，

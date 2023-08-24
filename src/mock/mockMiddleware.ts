@@ -4,7 +4,7 @@ import chokidar from 'chokidar';
 import fastGlob from 'fast-glob';
 import { match } from 'path-to-regexp';
 import type { Connect } from 'vite';
-import type { MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
+import type { Method, MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
 import { castArray, wait } from 'vtils';
 import consola from 'consola';
 import { loadESModule, loadModule } from '@/utils';
@@ -74,7 +74,7 @@ export async function mockServerMiddleware(
 		if (!prefix.some(pre => doesContextMatchUrl(pre, req.url!))) {
 			return next();
 		}
-		const method = req.method!.toUpperCase();
+		const method = req.method!.toUpperCase() as Method;
 		const { query, pathname } = urlParse(req.url!, true);
 
 		if (!modules[pathname!]) return next();
@@ -82,7 +82,7 @@ export async function mockServerMiddleware(
 		// 找到需要 mock 的接口数据
 		const currentMock = await loadESModule<MockOptionsItem>(modules[pathname!]);
 
-		if (!currentMock) return next();
+		if (!currentMock || !castArray(currentMock.method).includes(method)) return next();
 
 		consola.info('Mock: ', method, pathname);
 

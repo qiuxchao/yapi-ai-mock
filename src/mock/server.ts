@@ -20,16 +20,9 @@ const mockServer = async (config: MockServerConfig = {}) => {
 	});
 
 	app.use((req, res, next) => {
-		res.statusCode = 200;
-		res.statusMessage = 'OK';
-		res.setHeader('Content-Type', 'application/json');
-		res.end(
-			JSON.stringify({
-				code: 0,
-				message: 'success',
-				data: 'default mock response',
-			}),
-		);
+		res.statusCode = 404;
+		res.statusMessage = 'Not Found';
+		res.end('Not Found');
 		next();
 	});
 
