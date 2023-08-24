@@ -399,7 +399,7 @@ export class Generator {
 		}));
 		const inputList: string[] = [];
 		// 输入按长度分组
-		const _inputGroup = () => {
+		while (responseBodyList.length > 0) {
 			const input: Record<number, object> = {};
 			[...responseBodyList].forEach(item => {
 				const _input = JSON.stringify({ ...input, [item.id]: item.res_body });
@@ -412,9 +412,7 @@ export class Generator {
 				}
 			});
 			Object.keys(input).length && inputList.push(JSON.stringify(input));
-			responseBodyList.length && _inputGroup();
-		};
-		_inputGroup();
+		}
 		// 根据分组的输入，获取 mock 代码
 		await Promise.all(
 			inputList.map(async input => {
