@@ -56,12 +56,12 @@ export async function httpPost<T>(
 export async function getPrettierOptions(): Promise<prettier.Options> {
 	const prettierOptions: prettier.Options = {
 		parser: 'typescript',
-		printWidth: 120,
+		printWidth: 100,
 		tabWidth: 2,
 		singleQuote: true,
-		semi: false,
+		semi: true,
 		trailingComma: 'all',
-		bracketSpacing: false,
+		bracketSpacing: true,
 		endOfLine: 'lf',
 	};
 

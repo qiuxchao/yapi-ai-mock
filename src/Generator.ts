@@ -390,9 +390,26 @@ export class Generator {
 		const maxLength = Math.floor(
 			Number(process.env['OPENAI_MAX_TOKENS'] || OPENAI_MAX_TOKENS) * 1.5,
 		);
-		const schema = fs.readFileSync(path.join(__dirname, 'assets/mockSchema.ts'), 'utf8');
+
+		// 读取 mockSchema
+		const { mockSchemaPath, mockResponseBodyType } = this.config;
+		if (mockSchemaPath && !fs.existsSync(path.resolve(process.cwd(), mockSchemaPath))) {
+			throwError(`mockSchemaPath: ${mockSchemaPath} 不存在`);
+		}
+		const schemaPath = mockSchemaPath
+			? path.resolve(process.cwd(), mockSchemaPath)
+			: path.join(__dirname, 'assets/mockSchema.ts');
+		let schema = fs.readFileSync(schemaPath, 'utf8');
+		if (mockResponseBodyType && !mockSchemaPath) {
+			schema = schema.replace(
+				'ResponseBodyType = any',
+				`ResponseBodyType = ${mockResponseBodyType}`,
+			);
+		}
+		const [prettySchema] = await this.prettierFile(schema);
+		console.log(prettySchema);
 		// 剩余长度
-		const surplusLength = maxLength - (schema.length + 200);
+		const surplusLength = maxLength - (prettySchema.length + 200);
 		const responseBodyList = this.interfaceList.map(i => ({
 			id: i?.interfaceInfo?._id,
 			res_body: i?.interfaceInfo?._parsedResBody,
@@ -416,7 +433,7 @@ export class Generator {
 		// 根据分组的输入，获取 mock 代码
 		await Promise.all(
 			inputList.map(async input => {
-				const mockResult = await chat(input, schema, this.config);
+				const mockResult = await chat(input, prettySchema, this.config);
 				const outputFileList: OutputFileList = Object.create(null);
 				// 生成代码
 				await Promise.all(
@@ -454,10 +471,6 @@ export class Generator {
 		let hasError = false;
 		try {
 			result = await prettier.format(content, {
-				singleQuote: true,
-				trailingComma: 'all',
-				printWidth: 100,
-				parser: 'typescript',
 				...(await getCachedPrettierOptions()),
 			});
 		} catch (error) {

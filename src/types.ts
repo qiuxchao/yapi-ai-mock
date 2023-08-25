@@ -559,6 +559,47 @@ export interface Config {
 	mockPrefix?: string;
 
 	/**
+	 * 给 LLM 的类型提示文件路径。默认为 `yapi-ai-mock/lib/assets/mockSchema.ts`。
+	 *
+	 * 可以是 `相对路径` 或 `绝对路径`。
+	 *
+	 * 如果配置了此项，请确保文件中有 `MockResponse` 和 `ResponseBodyType` 两个类型。
+	 *
+	 * 此选项的配置可以参考 [TypeChat Examples](https://github.com/microsoft/TypeChat/tree/main/examples)
+	 *
+	 * @default 'assets/mockSchema.ts'
+	 */
+	mockSchemaPath?: `${string}.ts`;
+
+	/**
+	 * 给 LLM 的 mock 结果的类型定义。
+	 *
+	 * 如果配置了 `mockSchemaPath`，则此配置项无效。
+	 *
+	 * 此配置项会与 `yapi-ai-mock/lib/assets/mockSchema.ts` 进行合并，然后将合并后的结果传输给 LLM。
+	 *
+	 * 格式为 typescript 类型字符串。
+	 *
+	 * @example
+	 *
+	 * `{
+	 * 	// response code (default: 200)
+	 * 	code?: 200 | '200';
+	 * 	// response message (default: success)
+	 * 	message?: 'success';
+	 * 	// response message data (default: null)
+	 * 	// If it has currentPage field, its value is 1
+	 * 	// If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
+	 * 	data: any;
+	 * }`
+	 *
+	 * @default
+	 *
+	 * 'any'
+	 */
+	mockResponseBodyType?: string;
+
+	/**
 	 * 自定义 LLM 模型。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
 	 *
 	 *
@@ -611,7 +652,7 @@ export interface Config {
 	mockServer?: MockServerConfig;
 
 	/**
-	 * mock 代码片段。
+	 * 自定义生成的 mock 代码片段。
 	 *
 	 * 使用此方法可以自定义生成结果中的 mock 代码片段，如果不设置，则使用默认的 mock 代码片段。
 	 *
@@ -647,9 +688,9 @@ export interface Config {
 	mockImportStatement?: () => string;
 
 	/**
-	 * mock 结果处理。
+	 * 自定义 mock 结果处理。
 	 *
-	 * 对 LLM 返回的 mock 结果进行处理，使其符合预期。
+	 * 自定义的对 LLM 返回的 mock 结果进行处理，使其符合预期。
 	 *
 	 * 如果不设置，则直接使用 LLM 返回的 mock 结果。
 	 *
