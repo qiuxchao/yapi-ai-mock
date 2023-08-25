@@ -159,12 +159,12 @@ export class Generator {
 												interfaceInfo._outputFilePath = path.resolve(
 													this.options.cwd,
 													`${this.config?.mockDir || 'mock'}/${changeCase.camelCase(
-														`${projectName}-${categoryName}`,
-													)}${
+														projectName,
+													)}/${changeCase.camelCase(categoryName)}${
 														interfacePath.length
-															? `/${changeCase.camelCase(interfacePath.join(''))}`
+															? `/${changeCase.camelCase(interfacePath.join('-'))}`
 															: ''
-													}.ts`,
+													}.${syntheticalConfig.target === 'javascript' ? 'js' : 'ts'}`,
 												);
 												// 对接口返回数据进行解析处理，如果无法解析，则忽略该接口
 												try {

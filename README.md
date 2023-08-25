@@ -25,3 +25,10 @@
 2. 根据配置的路径找原来的 mock 文件
 3. 比较 md5 值，如果不一致则重新生成
 4. 生成 mock 文件
+
+todo:
+
+- schema MockResponse 支持自定义
+- js 文件生成测试
+- init 自命令生成配置文件
+- 文档
