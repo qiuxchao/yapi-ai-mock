@@ -37,12 +37,12 @@ import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
 import prettier from 'prettier';
-import { exec } from 'child_process';
 import chat from './chat';
 import consola from 'consola';
 import { Ora } from 'ora';
 import { SHA256 } from 'crypto-js';
 import { OPENAI_MAX_TOKENS } from './constant';
+import { transformWithEsbuild } from 'vite';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -68,6 +68,10 @@ export class Generator {
 	private completed: number = 0;
 	/** 接口列表 */
 	private interfaceList: SyntheticalInterface[] = [];
+	/** 宿主项目的 package.json */
+	private packageJson: any = {};
+	/** 宿主项目是否为ESM */
+	private isESM: boolean = false;
 
 	constructor(
 		config: Config,
@@ -80,6 +84,10 @@ export class Generator {
 
 	/** 前置方法，统一配置项 */
 	async prepare(): Promise<void> {
+		// 读取宿主项目的 package.json
+		this.packageJson = await fs.readJSON(path.resolve(this.options.cwd, 'package.json'));
+		this.isESM = this.packageJson.type === 'module';
+		// 处理 yapi 服务配置
 		this.serverConfig = await Promise.all(
 			// config 可能是对象或数组，统一为数组
 			this.serverConfig.map(async item => {
@@ -164,7 +172,13 @@ export class Generator {
 														interfacePath.length
 															? `/${changeCase.camelCase(interfacePath.join('-'))}`
 															: ''
-													}.${syntheticalConfig.target === 'javascript' ? 'js' : 'ts'}`,
+													}.${
+														syntheticalConfig.target === 'typescript'
+															? 'ts'
+															: this.isESM
+															? 'js'
+															: 'mjs'
+													}`,
 												);
 												// 对接口返回数据进行解析处理，如果无法解析，则忽略该接口
 												try {
@@ -259,13 +273,11 @@ export class Generator {
         `}\n`;
 				await fs.outputFile(outputFilePath, outputContent);
 
-				// 如果要生成 JavaScript 代码，
-				// 则先对主文件进行 tsc 编译，主文件引用到的其他文件也会被编译，
-				// 然后，删除原始的 .tsx? 文件。
-				if (syntheticalConfig.target === 'javascript') {
-					await this.tsc(outputFilePath);
-					await Promise.all([fs.remove(outputFilePath).catch(noop)]);
-				}
+				// 生成 JavaScript 代码
+				// if (syntheticalConfig.target === 'javascript') {
+				// 	await this.tsc(outputFilePath);
+				// 	await Promise.all([fs.remove(outputFilePath).catch(noop)]);
+				// }
 			}),
 		);
 	}
@@ -321,11 +333,12 @@ export class Generator {
 					value: `\`${extendedInterfaceInfo.method.toUpperCase()} ${extendedInterfaceInfo.path}\``,
 				},
 				hasUpdateTime && {
-					label: '更新时间',
-					value: process.env.JEST_WORKER_ID // 测试时使用 unix 时间戳
-						? String(extendedInterfaceInfo.up_time)
-						: /* istanbul ignore next */
-						  `\`${dayjs(extendedInterfaceInfo.up_time * 1000).format('YYYY-MM-DD HH:mm:ss')}\``,
+					label: '接口更新时间',
+					value: `\`${dayjs(extendedInterfaceInfo.up_time * 1000).format('YYYY-MM-DD HH:mm:ss')}\``,
+				},
+				{
+					label: '文件生成时间',
+					value: `\`${dayjs().format('YYYY-MM-DD HH:mm:ss')}\``,
 				},
 			];
 			if (typeof extraTags === 'function') {
@@ -407,7 +420,6 @@ export class Generator {
 			);
 		}
 		const [prettySchema] = await this.prettierFile(schema);
-		console.log(prettySchema);
 		// 剩余长度
 		const surplusLength = maxLength - (prettySchema.length + 200);
 		const responseBodyList = this.interfaceList.map(i => ({
@@ -460,7 +472,7 @@ export class Generator {
 				await this.write(outputFileList);
 				// 更新进度
 				this.completed += Object.keys(mockResult).length;
-				spinner.color = 'yellow';
+				spinner.color = this.completed > 15 ? 'red' : 'yellow';
 				spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
 			}),
 		);
@@ -479,24 +491,16 @@ export class Generator {
 		return [result, hasError];
 	}
 
-	tsc(file: string) {
-		return new Promise<void>(resolve => {
-			// add this to fix bug that not-generator-file-on-window
-			const command = `${require('os').platform() === 'win32' ? 'node ' : ''}${JSON.stringify(
-				require.resolve(`typescript/bin/tsc`),
-			)}`;
-
-			exec(
-				`${command} --target ES2019 --module ESNext --jsx preserve --declaration --esModuleInterop ${JSON.stringify(
-					file,
-				)}`,
-				{
-					cwd: this.options.cwd,
-					env: process.env,
-				},
-				() => resolve(),
-			);
+	/** 编译 ts 文件为 js 并写入 */
+	async tsc(filepath: string): Promise<void> {
+		const tsText = fs.readFileSync(filepath, 'utf-8');
+		const { code } = await transformWithEsbuild(tsText, filepath, {
+			target: 'es2020',
+			platform: 'node',
+			format: 'esm',
 		});
+		const outputFilePath = filepath.replace(/\.ts$/, '.mjs');
+		await fs.outputFile(outputFilePath, code);
 	}
 
 	async fetchApi<T = any>(url: string, query: Record<string, any>): Promise<T> {

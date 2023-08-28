@@ -396,6 +396,8 @@ export interface SharedConfig {
 	 * 要生成的目标代码类型。
 	 * 默认为 `typescript`。
 	 *
+	 * 设置为 `javascript` 时，将会根据当前项目的 `package.json` 中的 `type` 字段来决定生成文件的后缀名，如果 `type` 为 `module`，则生成 `.js` 后缀名，否则生成 `.mjs` 后缀名。
+	 *
 	 * @default 'typescript'
 	 */
 	target?: 'javascript' | 'typescript';

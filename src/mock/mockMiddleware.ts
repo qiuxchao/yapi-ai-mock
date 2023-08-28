@@ -9,6 +9,7 @@ import { castArray, wait } from 'vtils';
 import consola from 'consola';
 import { loadESModule, loadModule } from '@/utils';
 import { MOCK_TEMP_PATH } from '@/constant';
+import { resolve } from 'node:path';
 
 export async function mockServerMiddleware(
 	httpServer: Server | null,
@@ -22,7 +23,7 @@ export async function mockServerMiddleware(
 		const {
 			content: { url, enabled = true },
 			jsFilePath,
-		} = await loadModule<MockOptionsItem>(filepath, MOCK_TEMP_PATH);
+		} = await loadModule<MockOptionsItem>(resolve(process.cwd(), filepath), MOCK_TEMP_PATH);
 		if (enabled) {
 			modules[url] = jsFilePath;
 		}
@@ -61,7 +62,7 @@ export async function mockServerMiddleware(
 		const {
 			jsFilePath,
 			content: { url, enabled = true },
-		} = await loadModule<MockOptionsItem>(filePath, MOCK_TEMP_PATH);
+		} = await loadModule<MockOptionsItem>(resolve(process.cwd(), filePath), MOCK_TEMP_PATH);
 		if (enabled) {
 			modules[url] = jsFilePath;
 		} else {
