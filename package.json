@@ -9,6 +9,8 @@
 		"llm",
 		"ai"
 	],
+	"author": "qiuxchao",
+	"license": "MIT",
 	"main": "./lib/index.cjs",
 	"types": "./lib/index.d.ts",
 	"files": [
@@ -31,8 +33,6 @@
 			"import": "./lib/index.mjs"
 		}
 	},
-	"author": "",
-	"license": "ISC",
 	"peerDependencies": {
 		"@types/mockjs": "^1.0.7",
 		"mockjs": "^1.1.0"
