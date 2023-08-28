@@ -1,7 +1,7 @@
 {
 	"name": "yapi-ai-mock",
 	"version": "1.0.0",
-	"description": "通过LLM模型，将YAPI文档生成为本地的Mock文件。",
+	"description": "使用LLM技术，将YAPI文档生成为本地的Mock文件。",
 	"keywords": [
 		"yapi",
 		"codegen",
@@ -73,5 +73,8 @@
 		"typescript": "^5.1.6",
 		"unbuild": "^1.2.1",
 		"typechat": "^0.0.10"
+	},
+	"engines": {
+		"node": "^14.18.0 || >=16.10.0"
 	}
 }

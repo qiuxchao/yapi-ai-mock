@@ -1,6 +1,105 @@
 # yapi-ai-mock
 
-`yapi-ai-mock` 是一个将 YAPI 接口转换为 Mock.js 配置文件的工具，可以帮助开发人员快速生成 Mock.js 配置文件，提高工作效率。基于 GPT 技术实现。
+<br>
+<br>
+<p align="center">
+  <b>使用 AI 技术，将 YAPI 接口文档生成为本地的 Mock 文件。</b>
+</p>
+
+<p align="center">对 Vite 和 Webpack 提供 Mock 插件/中间件，其他项目可使用独立部署的 Mock 服务。</p>
+
+<br>
+<p align="center">
+<a href="https://www.npmjs.com/package/yapi-ai-mock"><img alt="npm" src="https://img.shields.io/npm/v/yapi-ai-mock?style=flat-square"></a>
+<img alt="node-current" src="https://img.shields.io/node/v/yapi-ai-mock?style=flat-square">
+<img alt="npm" src="https://img.shields.io/npm/dt/yapi-ai-mock?style=flat-square">
+<br>
+</p>
+<br>
+<br>
+
+## 特性
+
+- 🛠️ 支持自定义 LLM 和 Prompt
+- 🌐 支持 YAPI 多服务器、多项目、多分类
+- 🤖 支持预处理接口信息
+- 📝 完整的注释
+- 🧱 支持自定义生成的代码块
+- 🦾 支持生成 Typescript/JavaScript 代码
+- 💡 支持 ESModule
+- 🪝 支持构建流程的 Hooks
+- 🧲 非注入式，对客户端代码无侵入
+- 🔥 支持 Mock 文件热更新
+- 📦 自动加载 Mock 文件
+- ⚙️ 随意开启或关闭对某个接口的 Mock 配置
+- 🗂 支持构建可独立部署的小型 Mock 服务
+
+## 安装
+
+```bash
+# npm
+npm i yapi-ai-mock -D
+
+# yarn
+yarn add yapi-ai-mock -D
+
+# pnpm
+pnpm add yapi-ai-mock -D
+```
+
+## 使用
+
+初始化配置文件：
+
+```bash
+npx yam init
+```
+
+生成配置文件后，在配置文件中填写 YAPI 服务器地址、项目 token、分类 id，以及其他配置项。
+
+生成 mock 文件：
+
+```bash
+npx yam
+```
+
+在 Vite 中使用：
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+import { viteMockPlugin } from 'yapi-ai-mock';
+export default defineConfig({
+	plugins: [..., viteMockPlugin()],
+});
+```
+
+在 Webpack 中使用：
+
+```js
+// webpack.config.js
+const { webpackMockMiddleware } = require('yapi-ai-mock');
+module.exports = {
+  ...,
+	devServer: {
+		onBeforeSetupMiddleware: async (devServer) => {
+			const mockMiddleware = await webpackMockMiddleware(devServer.app);
+			devServer.app.use(mockMiddleware);
+		},
+    ...
+	},
+};
+```
+
+在其他项目中使用，直接启动 mock 服务器：
+
+```bash
+npx yam serve
+```
+
+## 配置
+
+## Cli 命令
 
 可配置的项：
 
@@ -10,23 +109,10 @@
 - [x] mockjs 配置代码 文件头部内容
 - [x] mockjs 配置代码 接口前缀 默认 /mock
 
-要实现的功能：
-
-- 支持命令 `init` 生成配置文件，导入 `defineConfig` 生成配置文件，填充默认配置
-- [x] 导出 `vite`、`webpack`、`rspack` 相关 `mock` 插件，支持在它们的 `config` 文件中配置插件
-
-在 mock 配置文件中植入 YAPI JSON 的 md5 值，用于判断是否需要重新生成 mock 文件
-
-生成流程：
-
-1. 请求 YAPI 接口获得接口数据
-2. 根据配置的路径找原来的 mock 文件
-3. 比较 hash 值，如果不一致则重新生成 ✅
-4. 生成 mock 文件
-
 todo:
 
 - schema MockResponse 支持自定义 ✅
 - js 文件生成 ✅
 - init 自命令生成配置文件 ✅
+- 支持低版本 node >= 12
 - 文档
