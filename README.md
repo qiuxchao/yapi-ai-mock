@@ -4,9 +4,7 @@
 
 可配置的项：
 
-- [x] gpt 接口（支持配置到 env 里）
 - [ ] gpt 支持的最大消息字符数
-- [x] YAPI 域名（支持配置到 env 里）
 - [x] YAPI 项目 token 排除的分类 id
 - [x] mockjs 配置代码 目录
 - [x] mockjs 配置代码 文件头部内容
@@ -15,7 +13,7 @@
 要实现的功能：
 
 - 支持命令 `init` 生成配置文件，导入 `defineConfig` 生成配置文件，填充默认配置
-- 导出 `vite`、`webpack`、`rspack` 相关 `mock` 插件，支持在它们的 `config` 文件中配置插件
+- [x] 导出 `vite`、`webpack`、`rspack` 相关 `mock` 插件，支持在它们的 `config` 文件中配置插件
 
 在 mock 配置文件中植入 YAPI JSON 的 md5 值，用于判断是否需要重新生成 mock 文件
 
@@ -23,12 +21,12 @@
 
 1. 请求 YAPI 接口获得接口数据
 2. 根据配置的路径找原来的 mock 文件
-3. 比较 md5 值，如果不一致则重新生成
+3. 比较 hash 值，如果不一致则重新生成 ✅
 4. 生成 mock 文件
 
 todo:
 
-- schema MockResponse 支持自定义
+- schema MockResponse 支持自定义 ✅
 - js 文件生成测试
 - init 自命令生成配置文件
 - 文档
