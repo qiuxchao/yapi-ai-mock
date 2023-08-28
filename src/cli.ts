@@ -10,6 +10,7 @@ import mockServer from '@/mock/server';
 import { loadModule } from '@/utils';
 import { CONFIG_TEMP_PATH, ENV_FILE_PATH } from '@/constant';
 import dotenv from 'dotenv';
+import init from '@/init';
 
 const yam = async (config: Config) => {
 	// 注入环境变量
@@ -50,7 +51,7 @@ const yam = async (config: Config) => {
 	await config?.hooks?.complete?.();
 };
 
-const run = async (options?: { configFile?: string }, isServe = false) => {
+const run = async (options?: { configFile?: string; port?: number }, isServe = false) => {
 	let useCustomConfigFile = false;
 	let cwd!: string;
 	let configTSFile!: string;
@@ -81,7 +82,10 @@ const run = async (options?: { configFile?: string }, isServe = false) => {
 	consola.success(`找到配置文件: ${configFile}`);
 	const { content: config } = await loadModule<Config>(configFile, CONFIG_TEMP_PATH);
 	if (isServe) {
-		await mockServer(config.mockServer);
+		await mockServer({
+			...(config.mockServer ?? {}),
+			port: options?.port ?? config.mockServer?.port,
+		});
 		return;
 	}
 	await yam(config);
@@ -92,17 +96,30 @@ if (require.main === module) {
 		.usage('使用：npx yam [选项]')
 		.alias('h', ['help'])
 		.alias('c', 'config')
+		.alias('t', 'target')
+		.alias('p', 'port')
 		.alias('version', 'v')
 		.example('$ npx yam', '生成 mock 代码')
 		.example('$ npx yam -c=配置文件路径', '指定配置文件并生成 mock 代码')
-		.example('$ npx yam serve', '启动 mock 服务器').argv;
+		.example('$ npx yam serve', '启动 mock 服务器')
+		.example('$ npx yam serve -p=3000', '指定端口启动 mock 服务器')
+		.example('$ npx yam init', '初始化配置文件，默认配置文件类型为 ts')
+		.example('$ npx yam init -t=ts|js', '指定文件类型初始化配置文件').argv;
 	// 指定配置文件运行：yam -c|-config=配置文件路径
-	run(
-		{
-			configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
-		},
-		argv?._?.includes('serve') ?? false,
-	);
+	if (argv._[2] === 'init') {
+		init(
+			process.cwd(),
+			['ts', 'js'].includes(String(argv.target)) ? (argv.target as 'ts' | 'js') : 'ts',
+		);
+	} else {
+		run(
+			{
+				configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
+				port: argv.port ? Number(argv.port) : undefined,
+			},
+			argv._[2] === 'serve' ?? false,
+		);
+	}
 }
 
 export default yam;

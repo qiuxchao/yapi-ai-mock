@@ -1,0 +1,138 @@
+/* 配置文档: xxxxxx */
+/* 根据需要修改此文件，增减无需配置的项和注释。 */
+/* 修改完成后，运行 `npx yam` 命令开始生成 mock 文件。 */
+
+import { defineConfig } from 'yapi-ai-mock';
+
+export default defineConfig({
+	/**
+	 * yapi 服务相关配置。
+	 *
+	 * 可以配置为一个列表，用于同时生成多个 yapi 服务的接口。
+	 */
+	yapi: {
+		/**
+		 * yapi 服务地址。
+		 *
+		 * @example 'http://yapi.foo.bar'
+		 */
+		serverUrl: '',
+		/**
+		 * 项目列表
+		 */
+		projects: [
+			{
+				/**
+				 * 项目的唯一标识。支持多个项目。
+				 *
+				 * 获取方式：打开项目 --> `设置` --> `token配置` --> 复制 token。
+				 *
+				 * @example 'e02a47135259d0c1973a9ff8xsbb30685d64abc7df39edaa1ac6b6a792a647d'
+				 */
+				token: '',
+				/**
+				 * 分类列表。
+				 */
+				categories: [
+					{
+						/**
+						 * 分类 ID，可以设置多个。设为 `0` 时表示全部分类。
+						 *
+						 * 如果需要获取全部分类，同时排除指定分类，可以这样：`[0, -20, -21]`，分类 ID 前面的负号表示排除。
+						 *
+						 * 获取方式：打开项目 --> 点开分类 --> 复制浏览器地址栏 `/api/cat_` 后面的数字。
+						 *
+						 */
+						id: [0],
+					},
+				],
+			},
+		],
+	},
+
+	/**
+	 * 环境变量文件路径。默认为项目根目录下的 `.env`。
+	 *
+	 * 可以是 `相对路径` 或 `绝对路径`。
+	 *
+	 * 可以在其中配置 `OPENAI_API_KEY` 等环境变量。
+	 *
+	 * @default '.env'
+	 */
+	// envPath: '',
+
+	/**
+	 * 给 LLM 的类型提示文件路径。默认为 `yapi-ai-mock/lib/assets/mockSchema.ts`。
+	 *
+	 * 可以是 `相对路径` 或 `绝对路径`。
+	 *
+	 * 如果配置了此项，请确保文件中有 `MockResponse` 和 `ResponseBodyType` 两个类型。
+	 *
+	 * 此选项的配置可以参考 [TypeChat Examples](https://github.com/microsoft/TypeChat/tree/main/examples)
+	 *
+	 * @default 'assets/mockSchema.ts'
+	 */
+	// mockSchemaPath: ``,
+
+	/**
+	 * 给 LLM 的 mock 结果的类型定义。
+	 *
+	 * 如果配置了 `mockSchemaPath`，则此配置项无效。
+	 *
+	 * 此配置项会与 `yapi-ai-mock/lib/assets/mockSchema.ts` 进行合并，然后将合并后的结果传输给 LLM。
+	 *
+	 * 格式为 typescript 类型字符串。
+	 *
+	 * @example
+	 *
+	 * `{
+	 * 	// response code (default: 200)
+	 * 	code?: 200;
+	 * 	// response message (default: 'success')
+	 * 	message?: 'success';
+	 * 	// response message data (default: null)
+	 * 	// If it has currentPage field, its value is 1
+	 * 	// If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
+	 * 	data: any;
+	 * }`
+	 *
+	 * @default
+	 *
+	 * 'any'
+	 */
+	// mockResponseBodyType: ``,
+
+	/**
+	 * 自定义 LLM 模型。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
+	 *
+	 *
+	 * @param axios axios 方法
+	 * @param success 成功回调
+	 * @param error 失败回调
+	 * @param apiEndpoint api 地址，可通过环境变量 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
+	 *
+	 * @returns [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
+	 *
+	 */
+	// createLanguageModel: (axios, success, error, apiEndpoint) => ({
+	// 	complete: async (prompt) => {
+	// 		try {
+	// 			const response = await axios(apiEndpoint, {
+	// 				method: 'POST',
+	// 				headers: {
+	// 					'Content-Type': 'application/json',
+	// 				},
+	// 				data: JSON.stringify({
+	// 					temperature: 0,
+	// 					n: 1,
+	// 					messages: [{ role: 'user', content: prompt }],
+	// 				}),
+	// 			});
+	// 			const json = response.data;
+	// 			return success((json?.data?.content as string) ?? '');
+	// 		} catch (err) {
+	// 			return error(`LLM fetch error: ${err}`);
+	// 		}
+	// 	},
+	// }),
+});

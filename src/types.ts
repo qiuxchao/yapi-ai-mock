@@ -632,7 +632,7 @@ export interface Config {
 	 *				const json = response.data;
 	 *				return success((json?.data?.content as string) ?? '');
 	 *			} catch (err) {
-	 *				return error(`Mock fetch error: ${err}`);
+	 *				return error(`LLM fetch error: ${err}`);
 	 *			}
 	 *		}
 	 *})

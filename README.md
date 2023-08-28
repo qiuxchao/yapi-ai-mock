@@ -27,6 +27,6 @@
 todo:
 
 - schema MockResponse 支持自定义 ✅
-- js 文件生成测试
-- init 自命令生成配置文件
+- js 文件生成 ✅
+- init 自命令生成配置文件 ✅
 - 文档
