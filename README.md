@@ -27,7 +27,7 @@
 - 🧱 支持自定义生成的代码块
 - 🦾 支持生成 Typescript/JavaScript 代码
 - 💡 支持 ESModule
-- 🪝 支持构建流程的 Hooks
+- 🪝 支持生成流程的 Hooks
 - 🧲 非注入式，对客户端代码无侵入
 - 🔥 支持 Mock 文件热更新
 - 📦 自动加载 Mock 文件
@@ -80,13 +80,11 @@ export default defineConfig({
 // webpack.config.js
 const { webpackMockMiddleware } = require('yapi-ai-mock');
 module.exports = {
-  ...
 	devServer: {
-    ...
-		onBeforeSetupMiddleware: async (devServer) => {
-			const mockMiddleware = await webpackMockMiddleware(devServer.app);
+		onBeforeSetupMiddleware: async devServer => {
+			mockMiddleware = await webpackMockMiddleware(devServer.app);
 			devServer.app.use(mockMiddleware);
-		}
+		},
 	},
 };
 ```
@@ -100,19 +98,3 @@ npx yam serve
 ## 配置
 
 ## Cli 命令
-
-可配置的项：
-
-- [ ] gpt 支持的最大消息字符数
-- [x] YAPI 项目 token 排除的分类 id
-- [x] mockjs 配置代码 目录
-- [x] mockjs 配置代码 文件头部内容
-- [x] mockjs 配置代码 接口前缀 默认 /mock
-
-todo:
-
-- schema MockResponse 支持自定义 ✅
-- js 文件生成 ✅
-- init 自命令生成配置文件 ✅
-- 支持低版本 node >= 12
-- 文档

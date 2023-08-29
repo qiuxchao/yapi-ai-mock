@@ -7,7 +7,7 @@ import { INCLUDE, PREFIX } from '../constant';
 /** Vite Mock 插件 */
 export function viteMockPlugin(
 	options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX },
-): Plugin {
+): any {
 	return {
 		name: 'vite-mock-plugin',
 		async configureServer({ middlewares, httpServer }) {
@@ -17,7 +17,7 @@ export function viteMockPlugin(
 			);
 			middlewares.use(middleware);
 		},
-	};
+	} as Plugin;
 }
 
 /** Webpack mock 中间件 */
