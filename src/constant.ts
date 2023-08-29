@@ -20,7 +20,7 @@ export const OPENAI_API_KEY = '';
 export const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
 /** 最大支持的 token */
-export const OPENAI_MAX_TOKENS = 4096;
+export const LLM_TOKENS = 4096;
 
 /** 环境变量文件路径 */
 export const ENV_FILE_PATH = '.env';

@@ -80,7 +80,10 @@ const run = async (options?: { configFile?: string; port?: number }, isServe = f
 		);
 	}
 	consola.success(`找到配置文件: ${configFile}`);
-	const { content: config } = await loadModule<Config>(configFile, CONFIG_TEMP_PATH);
+	// 读取宿主项目的 package.json
+	const packageJson = await fs.readJSON(path.resolve(cwd, 'package.json'));
+	const isESM = packageJson.type === 'module';
+	const { content: config } = await loadModule<Config>(configFile, CONFIG_TEMP_PATH, isESM);
 	if (isServe) {
 		await mockServer({
 			...(config.mockServer ?? {}),
@@ -99,10 +102,10 @@ if (require.main === module) {
 		.alias('t', 'target')
 		.alias('p', 'port')
 		.alias('version', 'v')
-		.example('$ npx yam', '生成 mock 代码')
-		.example('$ npx yam -c=配置文件路径', '指定配置文件并生成 mock 代码')
-		.example('$ npx yam serve', '启动 mock 服务器')
-		.example('$ npx yam serve -p=3000', '指定端口启动 mock 服务器')
+		.example('$ npx yam', '生成 mock 文件')
+		.example('$ npx yam -c=配置文件路径', '指定配置文件并生成 mock 文件')
+		.example('$ npx yam serve', '启动 mock 服务器，默认端口号为 3000')
+		.example('$ npx yam serve -p=端口号', '指定端口启动 mock 服务器')
 		.example('$ npx yam init', '初始化配置文件，默认配置文件类型为 ts')
 		.example('$ npx yam init -t=ts|js', '指定文件类型初始化配置文件').argv;
 	// 指定配置文件运行：yam -c|-config=配置文件路径

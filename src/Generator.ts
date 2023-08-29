@@ -41,7 +41,7 @@ import chat from './chat';
 import consola from 'consola';
 import { Ora } from 'ora';
 import { SHA256 } from 'crypto-js';
-import { OPENAI_MAX_TOKENS } from './constant';
+import { LLM_TOKENS } from './constant';
 import { transformWithEsbuild } from 'vite';
 
 interface OutputFileList {
@@ -400,9 +400,7 @@ export class Generator {
 
 	/** 生成 mock 代码 */
 	async genMockCode(spinner: Ora) {
-		const maxLength = Math.floor(
-			Number(process.env['OPENAI_MAX_TOKENS'] || OPENAI_MAX_TOKENS) * 1.5,
-		);
+		const maxLength = Math.floor(Number(process.env['LLM_TOKENS'] || LLM_TOKENS) * 1.5);
 
 		// 读取 mockSchema
 		const { mockSchemaPath, mockResponseBodyType } = this.config;

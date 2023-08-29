@@ -150,20 +150,21 @@ export async function loadESModule<T>(filepath: string): Promise<T> {
 export async function loadModule<T>(
 	filepath: string,
 	tempPath: string,
+	isESM = true,
 ): Promise<{
 	content: T;
 	jsFilePath: string;
 }> {
 	const ext = path.extname(filepath);
 	let jsFilePath = filepath;
-	if (ext === '.ts') {
+	if (ext === '.ts' || (ext === '.js' && !isESM)) {
 		const tsText = readFileSync(filepath, 'utf-8');
 		const { code } = await transformWithEsbuild(tsText, filepath, {
 			target: 'es2020',
 			platform: 'node',
 			format: 'esm',
 		});
-		const tempFile = path.join(process.cwd(), tempPath, filepath.replace(/\.ts$/, '.mjs'));
+		const tempFile = path.join(process.cwd(), tempPath, filepath.replace(/\.(ts|js)$/, '.mjs'));
 		const tempBasename = path.dirname(tempFile);
 		mkdirSync(tempBasename, { recursive: true });
 		writeFileSync(tempFile, code, 'utf8');

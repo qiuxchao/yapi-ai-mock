@@ -543,7 +543,9 @@ export interface Config {
 	envPath?: string;
 
 	/**
-	 * mock 目录路径。默认为 `mock`。
+	 * 生成 mock 文件目录路径。默认为 `mock`。
+	 *
+	 * 配置改项后，生成的 mock 文件会放在该目录下。
 	 *
 	 * 可以是 `相对路径` 或 `绝对路径`。
 	 *
@@ -556,6 +558,9 @@ export interface Config {
 
 	/**
 	 * mock 接口前缀。默认为 `/mock`。
+	 *
+	 * 生成的 mock 文件中，接口的路径会加上该前缀。
+	 *
 	 * @default '/mock'
 	 */
 	mockPrefix?: string;
@@ -574,7 +579,7 @@ export interface Config {
 	mockSchemaPath?: `${string}.ts`;
 
 	/**
-	 * 给 LLM 的 mock 结果的类型定义。
+	 * 给 LLM 的期望的 mock 结果的类型定义。
 	 *
 	 * 如果配置了 `mockSchemaPath`，则此配置项无效。
 	 *
@@ -645,11 +650,36 @@ export interface Config {
 	) => TypeChatLanguageModel;
 
 	/**
+	 * 自定义的对 LLM 返回的 mock 结果进行处理，使其符合预期。
+	 *
+	 * 如果不设置，则直接使用 LLM 返回的 mock 结果。
+	 *
+	 * @param mockResult LLM 返回的 mock 结果
+	 * @param interfaceInfo 接口信息
+	 *
+	 * @example
+	 *
+	 * ```ts
+	 * (mockResult, interfaceInfo) => {
+	 * 	if (mockResult?.hasOwnProperty('code')) {
+	 * 		mockResult.code = 200;
+	 * 	}
+	 * 	if (mockResult?.hasOwnProperty('message')) {
+	 * 		mockResult.message = 'success';
+	 * 	}
+	 * }
+	 * ```
+	 */
+	proccessMockResult?: (mockResult: any, interfaceInfo: Interface) => void;
+
+	/**
 	 * mock 服务配置。
 	 *
 	 * mock 服务是一个 http 服务，用于拦截请求并返回 mock 数据。
 	 *
 	 * 当你的项目不是 webpack 或 vite 等工具构建的 SPA 项目时，应当使用 mock 服务。
+	 *
+	 * 使用 `npx yam serve` 命令启动 mock 服务。
 	 */
 	mockServer?: MockServerConfig;
 
@@ -688,31 +718,6 @@ export interface Config {
 	 * ```
 	 */
 	mockImportStatement?: () => string;
-
-	/**
-	 * 自定义 mock 结果处理。
-	 *
-	 * 自定义的对 LLM 返回的 mock 结果进行处理，使其符合预期。
-	 *
-	 * 如果不设置，则直接使用 LLM 返回的 mock 结果。
-	 *
-	 * @param mockResult LLM 返回的 mock 结果
-	 * @param interfaceInfo 接口信息
-	 *
-	 * @example
-	 *
-	 * ```js
-	 * (mockResult, interfaceInfo) => {
-	 * 	if (mockResult?.hasOwnProperty('code')) {
-	 * 		mockResult.code = 200;
-	 * 	}
-	 * 	if (mockResult?.hasOwnProperty('message')) {
-	 * 		mockResult.message = 'success';
-	 * 	}
-	 * }
-	 * ```
-	 */
-	proccessMockResult?: (mockResult: any, interfaceInfo: Interface) => void;
 }
 
 /** mock 代码片段配置 */
