@@ -1,6 +1,6 @@
 import { ParsedPath } from 'path';
 import { OmitStrict, LiteralUnion, AsyncOrSync } from 'vtils/types';
-import { Error, Success, TypeChatLanguageModel } from './chat/typechat';
+import { Error, Success, TypeChatLanguageModel } from 'typechat';
 import { AxiosStatic } from 'axios';
 export interface ChangeCase {
 	/**

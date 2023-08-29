@@ -80,13 +80,13 @@ export default defineConfig({
 // webpack.config.js
 const { webpackMockMiddleware } = require('yapi-ai-mock');
 module.exports = {
-  ...,
+  ...
 	devServer: {
+    ...
 		onBeforeSetupMiddleware: async (devServer) => {
 			const mockMiddleware = await webpackMockMiddleware(devServer.app);
 			devServer.app.use(mockMiddleware);
-		},
-    ...
+		}
 	},
 };
 ```

@@ -8,8 +8,6 @@ import {
 } from 'typechat';
 import axios from 'axios';
 import consola from 'consola';
-import fs from 'fs-extra';
-import path from 'path';
 import { Config } from '..';
 import { throwError } from '@/utils';
 import { isFunction } from 'vtils';

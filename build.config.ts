@@ -11,6 +11,7 @@ export default defineBuildConfig({
 			input: 'src/chat/typechat',
 			outDir: 'lib/typechat',
 			format: 'cjs',
+			declaration: false,
 		},
 	],
 	externals: ['typechat'],
@@ -23,6 +24,7 @@ export default defineBuildConfig({
 		cjsBridge: true,
 		esbuild: {
 			// minify: true,
+			target: 'node14',
 		},
 		alias: {
 			entries: {
