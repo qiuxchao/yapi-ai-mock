@@ -7,9 +7,14 @@
 		"codegen",
 		"mockjs",
 		"llm",
-		"ai"
+		"ai",
+		"development"
 	],
-	"author": "qiuxchao",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/qiuxchao/yapi-ai-mock"
+	},
+	"author": "qiuxchao <qxcsmial@gmail.com> (https://github.com/qiuxchao",
 	"license": "MIT",
 	"main": "./lib/index.cjs",
 	"types": "./lib/index.d.ts",
@@ -74,6 +79,7 @@
 		"typescript": "^5.1.6",
 		"unbuild": "^1.2.1"
 	},
+	"packageManager": "pnpm@7.13.2",
 	"engines": {
 		"node": "^14.18.0 || >=16.10.0"
 	}
