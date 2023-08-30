@@ -4,7 +4,7 @@ import prettier from 'prettier';
 import { Interface } from './types';
 import path from 'node:path';
 import { mkdirSync, readFileSync, writeFileSync } from 'fs-extra';
-import { transformWithEsbuild } from 'vite';
+import { transform, type Loader } from 'esbuild';
 
 /**
  * 抛出错误。
@@ -134,6 +134,27 @@ export const proccessMockResult = (mockResult: any, interfaceInfo: Interface) =>
 	}
 };
 
+/** 转换 ts | js 文件 */
+export const transformWithEsbuild = async (code: string, filename: string) => {
+	let loader: Loader = 'js';
+	const ext = path.extname(filename).slice(1);
+	if (ext === 'cjs' || ext === 'mjs') {
+		loader = 'js';
+	} else if (ext === 'cts' || ext === 'mts') {
+		loader = 'ts';
+	} else {
+		loader = ext as Loader;
+	}
+	const result = await transform(code, {
+		sourcefile: filename,
+		loader,
+		target: 'es2020',
+		platform: 'node',
+		format: 'esm',
+	});
+	return result;
+};
+
 /**
  * 加载ES模块
  */
@@ -159,11 +180,7 @@ export async function loadModule<T>(
 	let jsFilePath = filepath;
 	if (ext === '.ts' || (ext === '.js' && !isESM)) {
 		const tsText = readFileSync(filepath, 'utf-8');
-		const { code } = await transformWithEsbuild(tsText, filepath, {
-			target: 'es2020',
-			platform: 'node',
-			format: 'esm',
-		});
+		const { code } = await transformWithEsbuild(tsText, filepath);
 		const tempFile = path.join(process.cwd(), tempPath, filepath.replace(/\.(ts|js)$/, '.mjs'));
 		const tempBasename = path.dirname(tempFile);
 		mkdirSync(tempBasename, { recursive: true });

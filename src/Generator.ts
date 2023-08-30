@@ -25,24 +25,24 @@ import {
 	ServerConfig,
 	SyntheticalConfig,
 	InterfaceList,
-} from './types';
+} from '@/types';
 import {
 	getCachedPrettierOptions,
 	httpGet,
 	throwError,
 	removeInvalidProperty,
 	proccessMockResult,
-} from './utils';
+	transformWithEsbuild,
+} from '@/utils';
 import * as fs from 'fs-extra';
 import path from 'path';
 import dayjs from 'dayjs';
 import prettier from 'prettier';
-import chat from './chat';
+import chat from '@/chat';
 import consola from 'consola';
 import { Ora } from 'ora';
 import { SHA256 } from 'crypto-js';
-import { LLM_TOKENS } from './constant';
-import { transformWithEsbuild } from 'vite';
+import { LLM_TOKENS } from '@/constant';
 
 interface OutputFileList {
 	[outputFilePath: string]: {
@@ -492,11 +492,7 @@ export class Generator {
 	/** 编译 ts 文件为 js 并写入 */
 	async tsc(filepath: string): Promise<void> {
 		const tsText = fs.readFileSync(filepath, 'utf-8');
-		const { code } = await transformWithEsbuild(tsText, filepath, {
-			target: 'es2020',
-			platform: 'node',
-			format: 'esm',
-		});
+		const { code } = await transformWithEsbuild(tsText, filepath);
 		const outputFilePath = filepath.replace(/\.ts$/, '.mjs');
 		await fs.outputFile(outputFilePath, code);
 	}

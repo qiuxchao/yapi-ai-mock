@@ -1,5 +1,4 @@
 import type http from 'node:http';
-import type { Connect } from 'vite';
 
 export interface MockServerPluginOptions {
 	/**
@@ -17,6 +16,18 @@ export interface MockServerPluginOptions {
 	 */
 	include?: string | string[];
 }
+
+export interface IncomingMessage extends http.IncomingMessage {
+	originalUrl?: http.IncomingMessage['url'] | undefined;
+}
+
+export type NextFunction = (err?: any) => void;
+
+export type NextHandleFunction = (
+	req: IncomingMessage,
+	res: http.ServerResponse,
+	next: NextFunction,
+) => void;
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'TRACE' | 'OPTIONS';
 
@@ -108,8 +119,8 @@ export interface MockOptionsItem {
 	 * 在 req 中，还可以拿到 query、params、body等已解析的请求信息
 	 */
 	response?: (
-		req: Connect.IncomingMessage & ResponseReq,
+		req: IncomingMessage & ResponseReq,
 		res: http.ServerResponse<http.IncomingMessage>,
-		next: Connect.NextFunction,
+		next: NextFunction,
 	) => void | Promise<void>;
 }

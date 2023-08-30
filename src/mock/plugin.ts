@@ -1,4 +1,3 @@
-import { Plugin } from 'vite';
 import type { MockServerPluginOptions } from './types';
 import { mockServerMiddleware } from './mockMiddleware';
 import { type Server } from 'node:http';
@@ -10,14 +9,14 @@ export function viteMockPlugin(
 ): any {
 	return {
 		name: 'vite-mock-plugin',
-		async configureServer({ middlewares, httpServer }) {
+		async configureServer({ middlewares, httpServer }: any) {
 			const middleware = await mockServerMiddleware(
 				httpServer,
 				options as Required<MockServerPluginOptions>,
 			);
 			middlewares.use(middleware);
 		},
-	} as Plugin;
+	};
 }
 
 /** Webpack mock 中间件 */

@@ -1,10 +1,15 @@
-import { type Server } from 'node:http';
+import type { Server, IncomingMessage } from 'node:http';
 import { parse as urlParse } from 'node:url';
 import chokidar from 'chokidar';
 import fastGlob from 'fast-glob';
 import { match } from 'path-to-regexp';
-import type { Connect } from 'vite';
-import type { Method, MockOptionsItem, MockServerPluginOptions, ResponseReq } from './types';
+import type {
+	Method,
+	MockOptionsItem,
+	MockServerPluginOptions,
+	NextHandleFunction,
+	ResponseReq,
+} from './types';
 import { castArray, wait } from 'vtils';
 import consola from 'consola';
 import { loadESModule, loadModule } from '@/utils';
@@ -14,7 +19,7 @@ import { resolve } from 'node:path';
 export async function mockServerMiddleware(
 	httpServer: Server | null,
 	options: Required<MockServerPluginOptions>,
-): Promise<Connect.NextHandleFunction> {
+): Promise<NextHandleFunction> {
 	const prefix = castArray(options.prefix);
 	const include = castArray(options.include);
 	const includePaths = await fastGlob(include, { cwd: process.cwd() });
@@ -117,7 +122,7 @@ export async function mockServerMiddleware(
 		}
 
 		if (currentMock.response) {
-			await currentMock.response(req as Connect.IncomingMessage & ResponseReq, res, next);
+			await currentMock.response(req as IncomingMessage & ResponseReq, res, next);
 			return;
 		}
 
