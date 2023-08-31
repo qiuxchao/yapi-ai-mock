@@ -6,7 +6,7 @@
   <b>使用 AI 技术，将 YAPI 接口文档生成为本地的 Mock 文件。</b>
 </p>
 
-<p align="center">对 Vite 和 Webpack 提供 Mock 插件/中间件，其他项目可使用独立部署的 Mock 服务。</p>
+<p align="center">对 Vite 和 Webpack 项目提供 Mock 插件/中间件，其他项目可使用独立部署的 Mock 服务。</p>
 
 <br>
 <p align="center">
@@ -98,23 +98,23 @@ npx yam serve
 import { defineConfig } from 'yapi-ai-mock';
 
 export default defineConfig({
-	yapi: {
-		// yapi 服务地址。
-		serverUrl: 'http://yapi.foo.bar',
-		// 项目列表
-		projects: [
-			{
-				// 项目的唯一标识。支持多个项目。
-				token: 'xxx',
-				// 分类列表。
-				categories: [
-					{
-						id: [0],
-					},
-				],
-			},
-		],
-	},
+  yapi: {
+    // yapi 服务地址。
+    serverUrl: 'http://yapi.foo.bar',
+    // 项目列表
+    projects: [
+      {
+        // 项目的唯一标识。支持多个项目。
+        token: 'xxx',
+        // 分类列表。
+        categories: [
+          {
+            id: [0],
+          },
+        ],
+      },
+    ],
+  },
 });
 ```
 
@@ -133,43 +133,43 @@ YAPI 服务相关配置。
  * 共享的配置。
  */
 export interface SharedConfig {
-	/**
-	 * 要生成的目标代码类型。
-	 * 默认为 `typescript`。
-	 *
-	 * 设置为 `javascript` 时，将会根据当前项目的 `package.json` 中的 `type` 字段来决定生成文件的后缀名，如果 `type` 为 `module`，则生成 `.js` 后缀名，否则生成 `.mjs` 后缀名。
-	 *
-	 * @default 'typescript'
-	 */
-	target?: 'javascript' | 'typescript';
+  /**
+   * 要生成的目标代码类型。
+   * 默认为 `typescript`。
+   *
+   * 设置为 `javascript` 时，将会根据当前项目的 `package.json` 中的 `type` 字段来决定生成文件的后缀名，如果 `type` 为 `module`，则生成 `.js` 后缀名，否则生成 `.mjs` 后缀名。
+   *
+   * @default 'typescript'
+   */
+  target?: 'javascript' | 'typescript';
 
-	/**
-	 * 支持生成注释的相关配置。
-	 */
-	comment?: CommentConfig;
+  /**
+   * 支持生成注释的相关配置。
+   */
+  comment?: CommentConfig;
 
-	/**
-	 * 预处理接口信息，返回新的接口信息。可返回 false 排除当前接口。
-	 *
-	 * 譬如你想对接口的 `path` 进行某些处理或者想排除某些接口，就可使用该方法。
-	 *
-	 * @param interfaceInfo 接口信息
-	 * @param changeCase 常用的大小写转换函数集合对象
-	 * @param syntheticalConfig 作用到当前接口的最终配置
-	 * @example
-	 *
-	 * ```js
-	 * interfaceInfo => {
-	 *   interfaceInfo.path = interfaceInfo.path.replace('v1', 'v2')
-	 *   return interfaceInfo
-	 * }
-	 * ```
-	 */
-	preproccessInterface?(
-		interfaceInfo: Interface,
-		changeCase: ChangeCase,
-		syntheticalConfig: SyntheticalConfig,
-	): Interface | false;
+  /**
+   * 预处理接口信息，返回新的接口信息。可返回 false 排除当前接口。
+   *
+   * 譬如你想对接口的 `path` 进行某些处理或者想排除某些接口，就可使用该方法。
+   *
+   * @param interfaceInfo 接口信息
+   * @param changeCase 常用的大小写转换函数集合对象
+   * @param syntheticalConfig 作用到当前接口的最终配置
+   * @example
+   *
+   * ```js
+   * interfaceInfo => {
+   *   interfaceInfo.path = interfaceInfo.path.replace('v1', 'v2')
+   *   return interfaceInfo
+   * }
+   * ```
+   */
+  preproccessInterface?(
+    interfaceInfo: Interface,
+    changeCase: ChangeCase,
+    syntheticalConfig: SyntheticalConfig
+  ): Interface | false;
 }
 ````
 
@@ -191,30 +191,30 @@ YAPI 服务地址。示例：`http://yapi.foo.bar`
  * 项目的配置。
  */
 export interface ProjectConfig extends SharedConfig {
-	/**
-	 * 项目的唯一标识。支持多个项目。
-	 *
-	 * 获取方式：打开项目 --> `设置` --> `token配置` --> 复制 token。
-	 *
-	 * @example 'e02a47135259d0c1973a9ff8xsbb30685d64abc7df39edaa1ac6b6a792a647d'
-	 */
-	token: string | string[];
+  /**
+   * 项目的唯一标识。支持多个项目。
+   *
+   * 获取方式：打开项目 --> `设置` --> `token配置` --> 复制 token。
+   *
+   * @example 'e02a47135259d0c1973a9ff8xsbb30685d64abc7df39edaa1ac6b6a792a647d'
+   */
+  token: string | string[];
 
-	/**
-	 * 分类列表。
-	 */
-	categories: Array<{
-		/**
-		 * 分类 ID，可以设置多个。设为 `0` 时表示全部分类。
-		 *
-		 * 如果需要获取全部分类，同时排除指定分类，可以这样：`[0, -20, -21]`，分类 ID 前面的负号表示排除。
-		 *
-		 * 获取方式：打开项目 --> 点开分类 --> 复制浏览器地址栏 `/api/cat_` 后面的数字。
-		 *
-		 * @example 20
-		 */
-		id: number | number[];
-	}>;
+  /**
+   * 分类列表。
+   */
+  categories: Array<{
+    /**
+     * 分类 ID，可以设置多个。设为 `0` 时表示全部分类。
+     *
+     * 如果需要获取全部分类，同时排除指定分类，可以这样：`[0, -20, -21]`，分类 ID 前面的负号表示排除。
+     *
+     * 获取方式：打开项目 --> 点开分类 --> 复制浏览器地址栏 `/api/cat_` 后面的数字。
+     *
+     * @example 20
+     */
+    id: number | number[];
+  }>;
 }
 ```
 
@@ -316,28 +316,28 @@ function createLanguageModel: (
 
 ```ts
 {
-	createLanguageModel: (axios, success, error, apiEndpoint) => ({
-		complete: async prompt => {
-			try {
-				const response = await axios(apiEndpoint, {
-					method: 'POST',
-					headers: {
-						Authorization: `Bearer ${apiKey}`,
-						'Content-Type': 'application/json',
-					},
-					data: JSON.stringify({
-						temperature: 0,
-						n: 1,
-						messages: [{ role: 'user', content: prompt }],
-					}),
-				});
-				const json = response.data;
-				return success((json?.data?.content as string) ?? '');
-			} catch (err) {
-				return error(`LLM fetch error: ${err}`);
-			}
-		},
-	});
+  createLanguageModel: (axios, success, error, apiEndpoint) => ({
+    complete: async (prompt) => {
+      try {
+        const response = await axios(apiEndpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          data: JSON.stringify({
+            temperature: 0,
+            n: 1,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        });
+        const json = response.data;
+        return success((json?.data?.content as string) ?? '');
+      } catch (err) {
+        return error(`LLM fetch error: ${err}`);
+      }
+    },
+  });
 }
 ```
 
@@ -350,27 +350,27 @@ function createLanguageModel: (
  * mock 服务配置。
  */
 export interface MockServerConfig {
-	/**
-	 * mock 服务端口。默认为 `3000`。
-	 *
-	 * @default 3000
-	 */
-	port?: number;
+  /**
+   * mock 服务端口。默认为 `3000`。
+   *
+   * @default 3000
+   */
+  port?: number;
 
-	/**
-	 * 为 http mock 服务配置 路径匹配规则，任何请求路径以 prefix 开头的都将被拦截代理。
-	 * 如果 prefix 以 `^` 开头，将被识别为 `RegExp`。
-	 * @default '/mock'
-	 * @example ['/mock']
-	 */
-	prefix?: string | string[];
+  /**
+   * 为 http mock 服务配置 路径匹配规则，任何请求路径以 prefix 开头的都将被拦截代理。
+   * 如果 prefix 以 `^` 开头，将被识别为 `RegExp`。
+   * @default '/mock'
+   * @example ['/mock']
+   */
+  prefix?: string | string[];
 
-	/**
-	 * glob字符串匹配 mock数据文件
-	 *
-	 * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
-	 */
-	include?: string | string[];
+  /**
+   * glob字符串匹配 mock数据文件
+   *
+   * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
+   */
+  include?: string | string[];
 }
 ```
 
@@ -378,9 +378,9 @@ export interface MockServerConfig {
 
 ```ts
 {
-	port: 3000;
-	prefix: '/mock';
-	include: ['mock/**/*.*'];
+  port: 3000;
+  prefix: '/mock';
+  include: ['mock/**/*.*'];
 }
 ```
 
@@ -478,14 +478,14 @@ function proccessMockResult: (mockResult: any, interfaceInfo: Interface): void;
 
 ```ts
 {
-	proccessMockResult: (mockResult, interfaceInfo) => {
-		if (mockResult?.hasOwnProperty('code')) {
-			mockResult.code = 200;
-		}
-		if (mockResult?.hasOwnProperty('message')) {
-			mockResult.message = 'success';
-		}
-	};
+  proccessMockResult: (mockResult, interfaceInfo) => {
+    if (mockResult?.hasOwnProperty('code')) {
+      mockResult.code = 200;
+    }
+    if (mockResult?.hasOwnProperty('message')) {
+      mockResult.message = 'success';
+    }
+  };
 }
 ```
 
@@ -493,12 +493,12 @@ function proccessMockResult: (mockResult: any, interfaceInfo: Interface): void;
 
 在 [`envPath`](#envpath) 配置项指定的环境变量文件中，可以配置以下环境变量：
 
-| 变量名                | 说明                                                                                                  |
-| --------------------- | ----------------------------------------------------------------------------------------------------- |
-| `OPENAI_API_KEY`      | OpenAI API Key，用于调用 OpenAI 的 ChatGPT 模型。                                                     |
-| `OPENAI_ENDPOINT`     | OpenAI API 地址，用于调用 OpenAI 的 ChatGPT 模型。默认为 `https://api.openai.com/v1/chat/completions` |
-| `OPENAI_MODEL	`        | OpenAI 模型名称（例如 `gpt-3.5-turbo` 或 `gpt-4`）                                                    |
-| `OPENAI_ORGANIZATION	` | OpenAI 组织 - 可选，默认为 `''`                                                                       |
+| 变量名                  | 说明                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`        | OpenAI API Key，用于调用 OpenAI 的 ChatGPT 模型。                                                     |
+| `OPENAI_ENDPOINT`       | OpenAI API 地址，用于调用 OpenAI 的 ChatGPT 模型。默认为 `https://api.openai.com/v1/chat/completions` |
+| `OPENAI_MODEL  `        | OpenAI 模型名称（例如 `gpt-3.5-turbo` 或 `gpt-4`）                                                    |
+| `OPENAI_ORGANIZATION  ` | OpenAI 组织 - 可选，默认为 `''`                                                                       |
 
 |
 | `LLM_TOKENS` | LLM 支持的 Tokens 数量，默认为 `4096` |
@@ -536,8 +536,8 @@ export default defineConfig({
 
 ```ts
 function webpackMockMiddleware(
-	httpServer: Server | null,
-	options?: MockServerPluginOptions,
+  httpServer: Server | null,
+  options?: MockServerPluginOptions
 ): Promise<vite.Connect.NextHandleFunction>;
 ```
 
@@ -549,12 +549,12 @@ webpack mock 中间件。
 // webpack.config.js
 const { webpackMockMiddleware } = require('yapi-ai-mock');
 module.exports = {
-	devServer: {
-		onBeforeSetupMiddleware: async devServer => {
-			mockMiddleware = await webpackMockMiddleware(devServer.app);
-			devServer.app.use(mockMiddleware);
-		},
-	},
+  devServer: {
+    onBeforeSetupMiddleware: async (devServer) => {
+      mockMiddleware = await webpackMockMiddleware(devServer.app);
+      devServer.app.use(mockMiddleware);
+    },
+  },
 };
 ```
 
@@ -568,3 +568,13 @@ module.exports = {
 | `npx yam init -t=js`      | 指定js文件类型初始化配置文件          |
 | `npx yam serve`           | 启动 mock 服务器，默认端口号为 3000   |
 | `npx yam serve -p=端口号` | 指定端口启动 mock 服务器              |
+
+## 版权
+
+[MIT](https://github.com/qiuxchao/yapi-ai-mock/blob/main/LICENSE) ©️ [qiuxchao](https://github.com/qiuxchao)
+
+本项目的灵感来源于这些项目：
+
+- [yapi-to-typescript](https://github.com/fjc0k/yapi-to-typescript)
+- [vite-plugin-mock-dev-server](https://github.com/pengzhanbo/vite-plugin-mock-dev-server)
+- [TypeChat](https://github.com/microsoft/TypeChat/tree/main)
