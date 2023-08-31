@@ -1,88 +1,88 @@
 {
-	"name": "yapi-ai-mock",
-	"version": "1.0.0",
-	"description": "使用LLM技术，将YAPI文档生成为本地的Mock文件。",
-	"keywords": [
-		"yapi",
-		"codegen",
-		"mockjs",
-		"llm",
-		"ai",
-		"development"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/qiuxchao/yapi-ai-mock"
-	},
-	"author": "qiuxchao <qxcsmial@gmail.com> (https://github.com/qiuxchao",
-	"license": "MIT",
-	"main": "./lib/index.cjs",
-	"types": "./lib/index.d.ts",
-	"files": [
-		"lib",
-		"LICENSE"
-	],
-	"bin": {
-		"yam": "./lib/cli.cjs"
-	},
-	"scripts": {
-		"build": "unbuild",
-		"stub": "unbuild --stub",
-		"dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\"",
-		"typecheck": "tsc --noEmit ./src/**/*.ts"
-	},
-	"exports": {
-		".": {
-			"types": "./lib/index.d.ts",
-			"default": "./lib/index.cjs",
-			"require": "./lib/index.cjs",
-			"import": "./lib/index.mjs"
-		}
-	},
-	"peerDependencies": {
-		"@types/mockjs": "^1.0.7",
-		"mockjs": "^1.1.0"
-	},
-	"dependencies": {
-		"axios": "^1.4.0",
-		"change-case": "^3.0.2",
-		"chokidar": "^3.5.3",
-		"consola": "^3.2.3",
-		"crypto-js": "^4.1.1",
-		"dayjs": "^1.11.9",
-		"dotenv": "^16.3.1",
-		"esbuild": "^0.19.2",
-		"express": "^4.18.2",
-		"fast-glob": "^3.2.12",
-		"fs-extra": "^11.1.1",
-		"ora": "^3.4.0",
-		"path-to-regexp": "^6.2.1",
-		"prettier": "^3.0.0",
-		"typechat": "^0.0.10",
-		"vtils": "^4.85.3",
-		"yargs": "^16.2.0"
-	},
-	"devDependencies": {
-		"@babel/eslint-parser": "^7.22.10",
-		"@qiuxc/eslint-config": "^0.0.8",
-		"@types/co-body": "^6.1.0",
-		"@types/crypto-js": "^4.1.1",
-		"@types/debug": "^4.1.7",
-		"@types/express": "^4.17.17",
-		"@types/fs-extra": "^11.0.1",
-		"@types/node": "^20.5.0",
-		"@types/path-to-regexp": "^1.7.0",
-		"@types/yargs": "^16.0.1",
-		"@typescript-eslint/eslint-plugin": "^6.4.0",
-		"@typescript-eslint/parser": "^6.4.0",
-		"chokidar-cli": "^3.0.0",
-		"eslint": "^8.47.0",
-		"release-it": "^16.1.5",
-		"typescript": "^5.1.6",
-		"unbuild": "^1.2.1"
-	},
-	"packageManager": "pnpm@7.13.2",
-	"engines": {
-		"node": "^14.18.0 || >=16.10.0"
-	}
+  "name": "yapi-ai-mock",
+  "version": "1.0.0",
+  "description": "使用LLM技术，将YAPI文档生成为本地的Mock文件。",
+  "keywords": [
+    "yapi",
+    "codegen",
+    "mockjs",
+    "llm",
+    "ai",
+    "development"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qiuxchao/yapi-ai-mock"
+  },
+  "author": "qiuxchao <qxcsmial@gmail.com> (https://github.com/qiuxchao",
+  "license": "MIT",
+  "main": "./lib/index.cjs",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib",
+    "LICENSE"
+  ],
+  "bin": {
+    "yam": "./lib/cli.cjs"
+  },
+  "scripts": {
+    "build": "unbuild",
+    "stub": "unbuild --stub",
+    "dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\"",
+    "typecheck": "tsc --noEmit ./src/**/*.ts",
+    "fix": "eslint --fix"
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.cjs",
+      "require": "./lib/index.cjs",
+      "import": "./lib/index.mjs"
+    }
+  },
+  "peerDependencies": {
+    "@types/mockjs": "^1.0.7",
+    "mockjs": "^1.1.0"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "change-case": "^3.0.2",
+    "chokidar": "^3.5.3",
+    "consola": "^3.2.3",
+    "crypto-js": "^4.1.1",
+    "dayjs": "^1.11.9",
+    "dotenv": "^16.3.1",
+    "esbuild": "^0.19.2",
+    "express": "^4.18.2",
+    "fast-glob": "^3.2.12",
+    "fs-extra": "^11.1.1",
+    "ora": "^3.4.0",
+    "path-to-regexp": "^6.2.1",
+    "prettier": "^3.0.0",
+    "typechat": "^0.0.10",
+    "vtils": "^4.85.3",
+    "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.22.10",
+    "@types/co-body": "^6.1.0",
+    "@types/crypto-js": "^4.1.1",
+    "@types/debug": "^4.1.7",
+    "@types/express": "^4.17.17",
+    "@types/fs-extra": "^11.0.1",
+    "@types/node": "^20.5.0",
+    "@types/path-to-regexp": "^1.7.0",
+    "@types/yargs": "^16.0.1",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "chokidar-cli": "^3.0.0",
+    "eslint": "^8.47.0",
+    "release-it": "^16.1.5",
+    "typescript": "^5.1.6",
+    "unbuild": "^1.2.1"
+  },
+  "packageManager": "pnpm@7.13.2",
+  "engines": {
+    "node": "^14.18.0 || >=16.10.0"
+  }
 }

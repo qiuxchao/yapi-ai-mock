@@ -317,7 +317,7 @@ function createLanguageModel: (
 ```ts
 {
   createLanguageModel: (axios, success, error, apiEndpoint) => ({
-    complete: async (prompt) => {
+    complete: async prompt => {
       try {
         const response = await axios(apiEndpoint, {
           method: 'POST',
@@ -457,7 +457,7 @@ import { defineMock } from 'yapi-ai-mock';
 
 生成的文件顶部引入部分的代码片段。
 
-### `proccessMockResult`
+### `processMockResult`
 
 - 类型：
 
@@ -467,7 +467,7 @@ import { defineMock } from 'yapi-ai-mock';
  * @param interfaceInfo 接口信息
  *
  */
-function proccessMockResult: (mockResult: any, interfaceInfo: Interface): void;
+function processMockResult: (mockResult: any, interfaceInfo: Interface): void;
 ```
 
 自定义的对 LLM 返回的 mock 结果进行处理，使其符合预期。
@@ -478,7 +478,7 @@ function proccessMockResult: (mockResult: any, interfaceInfo: Interface): void;
 
 ```ts
 {
-  proccessMockResult: (mockResult, interfaceInfo) => {
+  processMockResult: (mockResult, interfaceInfo) => {
     if (mockResult?.hasOwnProperty('code')) {
       mockResult.code = 200;
     }
@@ -550,7 +550,7 @@ webpack mock 中间件。
 const { webpackMockMiddleware } = require('yapi-ai-mock');
 module.exports = {
   devServer: {
-    onBeforeSetupMiddleware: async (devServer) => {
+    onBeforeSetupMiddleware: async devServer => {
       mockMiddleware = await webpackMockMiddleware(devServer.app);
       devServer.app.use(mockMiddleware);
     },

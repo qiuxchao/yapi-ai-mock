@@ -115,7 +115,7 @@ if (require.main === module) {
         configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
         port: argv.port ? Number(argv.port) : undefined,
       },
-      argv._[2] === 'serve' ?? false
+      argv._[2] === 'serve'
     );
   }
 }

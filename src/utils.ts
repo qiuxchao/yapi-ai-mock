@@ -23,13 +23,12 @@ export async function httpGet<T>(
 ): Promise<T> {
   const _url = new URL(url);
   if (query) {
-    Object.keys(query).forEach((key) => {
+    Object.keys(query).forEach(key => {
       _url.searchParams.set(key, query[key]);
     });
   }
-  url = _url.toString();
 
-  const res = await axios(url, {
+  const res = await axios(_url.toString(), {
     method: 'GET',
     headers,
   });
@@ -91,13 +90,13 @@ export const removeProperty = (obj: Record<string, any>, prop: string | string[]
     return obj;
   }
   if (Array.isArray(prop)) {
-    prop.forEach((p) => {
+    prop.forEach(p => {
       delete obj[p];
     });
   } else {
     delete obj[prop];
   }
-  Object.keys(obj).forEach((key) => {
+  Object.keys(obj).forEach(key => {
     removeProperty(obj[key], prop);
   });
   return obj;
@@ -108,7 +107,7 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
   if (!isObject(obj)) {
     return obj;
   }
-  Object.keys(obj).forEach((key) => {
+  Object.keys(obj).forEach(key => {
     if (!['properties', 'type', 'description'].includes(key) && !obj[key]?.type) {
       delete obj[key];
     }
@@ -118,7 +117,7 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
 };
 
 /** 处理 mock 结果 */
-export const proccessMockResult = (mockResult: any, interfaceInfo: Interface) => {
+export const processMockResult = (mockResult: any, interfaceInfo: Interface) => {
   if (mockResult?.hasOwnProperty('code')) {
     mockResult.code = 200;
   }
@@ -186,3 +185,5 @@ export async function loadModule<T>(
     jsFilePath,
   };
 }
+
+const a = 1;

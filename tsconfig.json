@@ -1,13 +1,13 @@
 {
-	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "Node",
-		"esModuleInterop": true,
-		"strict": true,
-		"paths": {
-			"@/*": ["./src/*"]
-		}
-	},
-	"include": ["src", "build.config.ts"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "build.config.ts", ".eslintrc.cjs"]
 }
