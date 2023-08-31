@@ -80,8 +80,9 @@ npx yam serve
 5. 在项目中请求接口时，将接口地址改为 mock 服务器地址，例如：
 
 ```ts
-// 请求地址为 http://yapi.foo.bar/path/to/api
-// 改为 http://localhost:3000/mock/path/to/api
+// 请求地址为 http://api.foo.bar/path/to/api
+// vite/webpack 项目改为 /mock/path/to/api
+// 独立启动的 mock 服务改为 http://localhost:3000/mock/path/to/api
 ```
 
 ## 配置
@@ -276,14 +277,14 @@ mock 接口前缀。
 
 ```ts
 `{
-	// response code (default: 200)
-	code?: 200 | '200';
-	// response message (default: success)
-	message?: 'success';
-	// response message data (default: null)
-	// If it has currentPage field, its value is 1
-	// If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
-	data: any;
+  // response code (default: 200)
+  code?: 200 | '200';
+  // response message (default: success)
+  message?: 'success';
+  // response message data (default: null)
+  // If it has currentPage field, its value is 1
+  // If there is a field related to the name of the person in the data, it will be simulated as a Chinese name
+  data: any;
 }`;
 ```
 
@@ -293,20 +294,20 @@ mock 接口前缀。
 
 ```ts
 /**
-	 * @param axios axios 方法
-	 * @param success 成功回调
-	 * @param error 失败回调
-	 * @param apiEndpoint api 地址，可通过环境变量 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
-	 *
-	 * @returns [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
-	 *
-	 */
+   * @param axios axios 方法
+   * @param success 成功回调
+   * @param error 失败回调
+   * @param apiEndpoint api 地址，可通过环境变量 `OPENAI_ENDPOINT` 设置，默认为 `https://api.openai.com/v1/chat/completions`
+   *
+   * @returns [TypeChatLanguageModel](https://github.com/microsoft/TypeChat/blob/main/src/model.ts#L10C28-L10C28)
+   *
+   */
 function createLanguageModel: (
-		axios: AxiosStatic,
-		success: <T>(data: T) => Success<T>,
-		error: (message: string) => Error,
-		apiEndpoint: string,
-	): TypeChatLanguageModel;
+    axios: AxiosStatic,
+    success: <T>(data: T) => Success<T>,
+    error: (message: string) => Error,
+    apiEndpoint: string,
+  ): TypeChatLanguageModel;
 ```
 
 自定义 LLM 模型。如果在[环境变量](#环境变量)中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
@@ -400,20 +401,20 @@ function mockStatement: (mockConstruction: MockConstruction): string;
 
 /** mock 代码片段配置 */
 export interface MockConstruction {
-	/** 注释 */
-	comment: string;
-	/** 请求路径 */
-	path: string;
-	/** 请求方法 */
-	method: Method;
-	/** LLM 生成的 mock 代码 */
-	mockCode: string;
-	/**
-	 * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
-	 *
-	 * 注入格式: /* hash: ${mockConstruction.hash} &#42;&#47;
-	 */
-	hash: string;
+  /** 注释 */
+  comment: string;
+  /** 请求路径 */
+  path: string;
+  /** 请求方法 */
+  method: Method;
+  /** LLM 生成的 mock 代码 */
+  mockCode: string;
+  /**
+   * 接口响应数据 hash 值，将此值注入到生成的代码中，用于判断接口数据是否更新。
+   *
+   * 注入格式: /* hash: ${mockConstruction.hash} &#42;&#47;
+   */
+  hash: string;
 }
 ```
 
@@ -424,11 +425,11 @@ export interface MockConstruction {
 /* hash: ${mockConstruction.hash} */
 ${mockConstruction.comment}
 export default defineMock({
-	url: '${config.mockPrefix || '/mock'}${mockConstruction.path}',
-	method: '${mockConstruction.method}',
-	body: mockjs.mock(
-		${mockConstruction.mockCode || '{}'}
-	),
+  url: '${config.mockPrefix || '/mock'}${mockConstruction.path}',
+  method: '${mockConstruction.method}',
+  body: mockjs.mock(
+    ${mockConstruction.mockCode || '{}'}
+  ),
 });
 `;
 ```
@@ -525,7 +526,7 @@ vite mock 插件。
 import { defineConfig } from 'vite';
 import { viteMockPlugin } from 'yapi-ai-mock';
 export default defineConfig({
-	plugins: [..., viteMockPlugin()],
+  plugins: [..., viteMockPlugin()],
 });
 ```
 
