@@ -427,7 +427,7 @@ export interface SharedConfig {
   preproccessInterface?: (
     interfaceInfo: Interface,
     changeCase: ChangeCase,
-    syntheticalConfig: SyntheticalConfig
+    syntheticalConfig: SyntheticalConfig,
   ) => Interface | false;
 }
 
@@ -646,7 +646,7 @@ export interface Config {
     axios: AxiosStatic,
     success: <T>(data: T) => Success<T>,
     error: (message: string) => Error,
-    apiEndpoint: string
+    apiEndpoint: string,
   ) => TypeChatLanguageModel;
 
   /**

@@ -168,7 +168,7 @@ export interface SharedConfig {
   preproccessInterface?(
     interfaceInfo: Interface,
     changeCase: ChangeCase,
-    syntheticalConfig: SyntheticalConfig
+    syntheticalConfig: SyntheticalConfig,
   ): Interface | false;
 }
 ````
@@ -537,7 +537,7 @@ export default defineConfig({
 ```ts
 function webpackMockMiddleware(
   httpServer: Server | null,
-  options?: MockServerPluginOptions
+  options?: MockServerPluginOptions,
 ): Promise<vite.Connect.NextHandleFunction>;
 ```
 

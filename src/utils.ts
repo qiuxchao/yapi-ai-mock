@@ -19,7 +19,7 @@ export function throwError(...msg: string[]): never {
 export async function httpGet<T>(
   url: string,
   query?: Record<string, any>,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): Promise<T> {
   const _url = new URL(url);
   if (query) {
@@ -36,7 +36,11 @@ export async function httpGet<T>(
   return res.data as any;
 }
 
-export async function httpPost<T>(url: string, body?: BodyInit, headers: Record<string, string> = {}): Promise<T> {
+export async function httpPost<T>(
+  url: string,
+  body?: BodyInit,
+  headers: Record<string, string> = {},
+): Promise<T> {
   const res = await axios(url, {
     method: 'POST',
     headers: {
@@ -70,7 +74,9 @@ export async function getPrettierOptions(): Promise<prettier.Options> {
     return prettierOptions;
   }
 
-  const [prettierConfigErr, prettierConfig] = await run(() => prettier.resolveConfig(prettierConfigPath));
+  const [prettierConfigErr, prettierConfig] = await run(() =>
+    prettier.resolveConfig(prettierConfigPath),
+  );
   if (prettierConfigErr || !prettierConfig) {
     return prettierOptions;
   }
@@ -82,7 +88,8 @@ export async function getPrettierOptions(): Promise<prettier.Options> {
   };
 }
 
-export const getCachedPrettierOptions: () => Promise<prettier.Options> = memoize(getPrettierOptions);
+export const getCachedPrettierOptions: () => Promise<prettier.Options> =
+  memoize(getPrettierOptions);
 
 /** 递归删除对象中指定的key */
 export const removeProperty = (obj: Record<string, any>, prop: string | string[]) => {
@@ -163,7 +170,7 @@ export async function loadESModule<T>(filepath: string): Promise<T> {
 export async function loadModule<T>(
   filepath: string,
   tempPath: string,
-  isESM = true
+  isESM = true,
 ): Promise<{
   content: T;
   jsFilePath: string;
@@ -185,5 +192,3 @@ export async function loadModule<T>(
     jsFilePath,
   };
 }
-
-const a = 1;
