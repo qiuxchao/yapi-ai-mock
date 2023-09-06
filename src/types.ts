@@ -2,6 +2,7 @@ import { ParsedPath } from 'path';
 import { OmitStrict, LiteralUnion, AsyncOrSync } from 'vtils/types';
 import { Error, Success, TypeChatLanguageModel } from 'typechat';
 import { AxiosStatic } from 'axios';
+import { MockServerPluginOptions } from './mock/types';
 export interface ChangeCase {
   /**
    * @example
@@ -469,28 +470,13 @@ export interface ProjectConfig extends SharedConfig {
 /**
  * mock 服务配置。
  */
-export interface MockServerConfig {
+export interface MockServerConfig extends MockServerPluginOptions {
   /**
    * mock 服务端口。默认为 `3000`。
    *
    * @default 3000
    */
   port?: number;
-
-  /**
-   * 为 http mock 服务配置 路径匹配规则，任何请求路径以 prefix 开头的都将被拦截代理。
-   * 如果 prefix 以 `^` 开头，将被识别为 `RegExp`。
-   * @default '/mock'
-   * @example ['/mock']
-   */
-  prefix?: string | string[];
-
-  /**
-   * glob字符串匹配 mock数据文件
-   *
-   * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
-   */
-  include?: string | string[];
 }
 
 export interface ServerConfig extends SharedConfig {

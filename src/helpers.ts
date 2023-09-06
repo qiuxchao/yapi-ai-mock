@@ -6,5 +6,5 @@ import { Config } from './types';
  * @param config 配置
  */
 export function defineConfig(config: Config): Config {
-	return config || {};
+  return config || {};
 }

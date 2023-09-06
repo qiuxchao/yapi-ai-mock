@@ -5,28 +5,28 @@ import { INCLUDE, PREFIX } from '../constant';
 
 /** Vite Mock 插件 */
 export function viteMockPlugin(
-	options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX },
+  options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX, overwrite: () => [] },
 ): any {
-	return {
-		name: 'vite-mock-plugin',
-		async configureServer({ middlewares, httpServer }: any) {
-			const middleware = await mockServerMiddleware(
-				httpServer,
-				options as Required<MockServerPluginOptions>,
-			);
-			middlewares.use(middleware);
-		},
-	};
+  return {
+    name: 'vite-mock-plugin',
+    async configureServer({ middlewares, httpServer }: any) {
+      const middleware = await mockServerMiddleware(
+        httpServer,
+        options as Required<MockServerPluginOptions>,
+      );
+      middlewares.use(middleware);
+    },
+  };
 }
 
 /** Webpack mock 中间件 */
 export async function webpackMockMiddleware(
-	httpServer: Server | null,
-	options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX },
+  httpServer: Server | null,
+  options: MockServerPluginOptions = { include: INCLUDE, prefix: PREFIX, overwrite: () => [] },
 ) {
-	const middleware = await mockServerMiddleware(
-		httpServer,
-		options as Required<MockServerPluginOptions>,
-	);
-	return middleware;
+  const middleware = await mockServerMiddleware(
+    httpServer,
+    options as Required<MockServerPluginOptions>,
+  );
+  return middleware;
 }
