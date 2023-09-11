@@ -4,6 +4,7 @@ import { mockServerMiddleware } from './mockMiddleware';
 import { INCLUDE, PORT, PREFIX } from '../constant';
 import { MockServerConfig } from '@/types';
 import { isFunction } from 'vtils';
+import cors from 'cors';
 const app = express();
 
 const mockServer = async (config: MockServerConfig = {}) => {
@@ -16,11 +17,9 @@ const mockServer = async (config: MockServerConfig = {}) => {
     prefix,
     overwrite,
   });
-  app.use(middleware);
 
-  const server = app.listen(port, () => {
-    consola.start(`Mock Server At:  http://localhost:${port}`);
-  });
+  app.use(cors());
+  app.use(middleware);
 
   app.use((req, res, next) => {
     res.statusCode = 404;
@@ -29,6 +28,11 @@ const mockServer = async (config: MockServerConfig = {}) => {
     next();
   });
 
+  const server = app.listen(port, () => {
+    consola.start(`Mock Server At:  http://localhost:${port}`);
+  });
+
+  // ctrl + c 关闭服务
   process.on('SIGINT', () => {
     server.close(() => {
       consola.fail('Mock Server:  Closed.');
