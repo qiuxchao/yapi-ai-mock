@@ -1,7 +1,7 @@
 {
   "name": "yapi-ai-mock",
   "version": "1.0.0",
-  "description": "使用LLM技术，将YAPI文档生成为本地的Mock文件。",
+  "description": "使用 LLM，将 YAPI 文档生成为本地的 Mock 文件。",
   "keywords": [
     "yapi",
     "codegen",
@@ -13,6 +13,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/qiuxchao/yapi-ai-mock"
+  },
+  "bugs": {
+    "url": "https://github.com/qiuxchao/yapi-ai-mock/issues"
   },
   "author": "qiuxchao <qxcsmial@gmail.com> (https://github.com/qiuxchao",
   "license": "MIT",
@@ -30,7 +33,8 @@
     "stub": "unbuild --stub",
     "dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\"",
     "typecheck": "tsc --noEmit ./src/**/*.ts",
-    "fix": "eslint --fix"
+    "fix": "eslint --fix",
+    "release": "release-it"
   },
   "exports": {
     ".": {
@@ -88,5 +92,9 @@
   "packageManager": "pnpm@7.13.2",
   "engines": {
     "node": "^14.18.0 || >=16.10.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }

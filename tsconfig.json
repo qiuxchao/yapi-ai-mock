@@ -9,5 +9,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "build.config.ts", ".eslintrc.cjs"]
+  "include": ["src", "build.config.ts", ".eslintrc.cjs", ".release-it.js"]
 }

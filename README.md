@@ -3,7 +3,7 @@
 <br>
 <br>
 <p align="center">
-  <b>使用 AI 技术，将 YAPI 接口文档生成为本地的 Mock 文件。</b>
+  <b>使用 LLM，将 YAPI 接口文档生成为本地的 Mock 文件。</b>
 </p>
 
 <p align="center">对 Vite 和 Webpack 项目提供 Mock 插件/中间件，其他项目可使用独立部署的 Mock 服务。</p>
@@ -371,6 +371,25 @@ export interface MockServerConfig {
    * 默认 ['mock/&#42;&#42;&#47;&#42;.&#42;']
    */
   include?: string | string[];
+
+  /**
+   * 自定义要 mock 的接口列表。
+   *
+   * 该配置项可以用来覆盖生成的 mock 文件，也可以用来 mock 一些没有配置 mock 文件的接口。
+   *
+   * @example
+   *{
+   *  overwrite: () => [
+   *    {
+   *     url: '/mock/userInfo',
+   *     method: 'GET',
+   * 	   body: mockjs.mock({code: 200, message: 'success', data: {nickname: '@cname'}})
+   *    },
+   *    ...
+   *  ]
+   *}
+   */
+  overwrite?: () => MockOptionsItem | MockOptionsItem[];
 }
 ```
 
@@ -378,9 +397,10 @@ export interface MockServerConfig {
 
 ```ts
 {
-  port: 3000;
-  prefix: '/mock';
-  include: ['mock/**/*.*'];
+  port: 3000,
+  prefix: '/mock',
+  include: ['mock/**/*.*'],
+  overwrite: () => [],
 }
 ```
 
@@ -519,6 +539,8 @@ function viteMockPlugin(options?: MockServerPluginOptions): any;
 
 vite mock 插件。
 
+其中 `options` 的类型 `MockServerPluginOptions` 参考 [mockServer 配置项](#mockserver)，但不支持其中的 `port` 字段。
+
 使用示例：
 
 ```ts
@@ -542,6 +564,8 @@ function webpackMockMiddleware(
 ```
 
 webpack mock 中间件。
+
+其中 `options` 的类型 `MockServerPluginOptions` 参考 [mockServer 配置项](#mockserver)，但不支持其中的 `port` 字段。
 
 使用示例：
 
@@ -575,6 +599,6 @@ module.exports = {
 
 本项目的灵感来源于这些项目：
 
+- [TypeChat](https://github.com/microsoft/TypeChat/tree/main)
 - [yapi-to-typescript](https://github.com/fjc0k/yapi-to-typescript)
 - [vite-plugin-mock-dev-server](https://github.com/pengzhanbo/vite-plugin-mock-dev-server)
-- [TypeChat](https://github.com/microsoft/TypeChat/tree/main)
