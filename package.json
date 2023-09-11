@@ -1,6 +1,6 @@
 {
   "name": "yapi-ai-mock",
-  "version": "0.9.9",
+  "version": "1.0.0",
   "description": "使用 LLM，将 YAPI 文档生成为本地的 Mock 文件。",
   "keywords": [
     "yapi",
