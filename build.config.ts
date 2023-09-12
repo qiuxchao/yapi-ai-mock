@@ -23,7 +23,7 @@ export default defineBuildConfig({
     emitCJS: true,
     cjsBridge: true,
     esbuild: {
-      minify: true,
+      //   minify: true,
       target: 'node14',
     },
     alias: {
@@ -39,7 +39,7 @@ export default defineBuildConfig({
       const cliCJSContent = readFileSync(path.resolve(__dirname, 'lib/cli.cjs'), 'utf8');
       writeFileSync(
         path.resolve(__dirname, 'lib/cli.cjs'),
-        cliCJSContent.replace(/require\('typechat'\)/, `require('./typechat')`),
+        cliCJSContent.replace(/require\(('|")typechat('|")\)/, `require("./typechat")`),
       );
     },
   },

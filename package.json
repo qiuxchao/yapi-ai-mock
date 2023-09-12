@@ -10,6 +10,7 @@
     "ai",
     "development"
   ],
+  "homepage": "https://github.com/qiuxchao/yapi-ai-mock#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/qiuxchao/yapi-ai-mock"
@@ -45,8 +46,8 @@
     }
   },
   "peerDependencies": {
-    "@types/mockjs": "^1.0.7",
-    "mockjs": "^1.1.0"
+    "@types/mockjs": ">=1.0.7",
+    "mockjs": ">=1.1.0"
   },
   "dependencies": {
     "axios": "^1.4.0",

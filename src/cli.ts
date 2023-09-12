@@ -75,7 +75,9 @@ const run = async (options?: { configFile?: string; port?: number }, isServe = f
   }
 
   if (!configFileExist) {
-    return consola.error(`找不到配置文件: ${useCustomConfigFile ? configFile : `${configTSFile} 或 ${configJSFile}`}`);
+    return consola.error(
+      `找不到配置文件: ${useCustomConfigFile ? configFile : `${configTSFile} 或 ${configJSFile}`}`,
+    );
   }
   consola.success(`找到配置文件: ${configFile}`);
   // 读取宿主项目的 package.json
@@ -108,14 +110,17 @@ if (require.main === module) {
     .example('$ npx yam init -t=ts|js', '指定文件类型初始化配置文件').argv;
   // 指定配置文件运行：yam -c|-config=配置文件路径
   if (argv._[2] === 'init') {
-    init(process.cwd(), ['ts', 'js'].includes(String(argv.target)) ? (argv.target as 'ts' | 'js') : 'ts');
+    init(
+      process.cwd(),
+      ['ts', 'js'].includes(String(argv.target)) ? (argv.target as 'ts' | 'js') : 'ts',
+    );
   } else {
     run(
       {
         configFile: argv.config ? path.resolve(process.cwd(), argv.config as string) : undefined,
         port: argv.port ? Number(argv.port) : undefined,
       },
-      argv._[2] === 'serve'
+      argv._[2] === 'serve',
     );
   }
 }

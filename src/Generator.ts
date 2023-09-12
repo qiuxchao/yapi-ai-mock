@@ -1,5 +1,15 @@
 /* eslint-disable max-nested-callbacks */
-import { castArray, dedent, isEmpty, memoize, omit, uniq, isFunction, indent, cloneDeepFast } from 'vtils';
+import {
+  castArray,
+  dedent,
+  isEmpty,
+  memoize,
+  omit,
+  uniq,
+  isFunction,
+  indent,
+  cloneDeepFast,
+} from 'vtils';
 import * as changeCase from 'change-case';
 import {
   Category,
@@ -91,7 +101,7 @@ export class Generator {
         return cat;
       });
     },
-    ({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`
+    ({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`,
   );
 
   /** 获取项目信息 */
@@ -109,12 +119,12 @@ export class Generator {
       projectInfo._url = `${serverUrl}/project/${projectInfo._id}/interface/api`;
       return projectInfo;
     },
-    ({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`
+    ({ serverUrl, token }: SyntheticalConfig) => `${serverUrl}|${token}`,
   );
 
   public constructor(
     config: Config,
-    private options: { cwd: string } = { cwd: process.cwd() }
+    private options: { cwd: string } = { cwd: process.cwd() },
   ) {
     // server config 可能是对象或数组，统一为数组
     this.serverConfig = castArray(config.yapi);
@@ -136,7 +146,7 @@ export class Generator {
         }
         item.serverUrl = serverUrl;
         return item;
-      })
+      }),
     );
   }
 
@@ -149,7 +159,7 @@ export class Generator {
             ...castArray(project.token).map(token => ({
               ...project,
               token,
-            }))
+            })),
           );
           return projects;
         }, []);
@@ -174,7 +184,9 @@ export class Generator {
                 const excludedCategoryIds = categoryIds.filter(id => id < 0).map(Math.abs);
                 categoryIds = categoryIds.filter(id => !excludedCategoryIds.includes(Math.abs(id)));
                 // 删除不存在的分类
-                categoryIds = categoryIds.filter(id => !!projectInfo.cats.find(cat => cat._id === id));
+                categoryIds = categoryIds.filter(
+                  id => !!projectInfo.cats.find(cat => cat._id === id),
+                );
                 // 顺序化
                 categoryIds = categoryIds.sort();
 
@@ -200,14 +212,23 @@ export class Generator {
                         // 实现 _project 字段
                         interfaceInfo._project = omit(projectInfo, ['cats']);
                         // 实现 _outputFilePath 字段
-                        const [_, projectName, categoryName, ...interfacePath] = interfaceInfo.path.split('/');
+                        const [_, projectName, categoryName, ...interfacePath] =
+                          interfaceInfo.path.split('/');
                         interfaceInfo._outputFilePath = path.resolve(
                           this.options.cwd,
                           `${this.config?.mockDir || 'mock'}/${changeCase.camelCase(
-                            projectName
+                            projectName,
                           )}/${changeCase.camelCase(categoryName)}${
-                            interfacePath.length ? `/${changeCase.camelCase(interfacePath.join('-'))}` : ''
-                          }.${syntheticalConfig.target === 'typescript' ? 'ts' : this.isESM ? 'js' : 'mjs'}`
+                            interfacePath.length
+                              ? `/${changeCase.camelCase(interfacePath.join('-'))}`
+                              : ''
+                          }.${
+                            syntheticalConfig.target === 'typescript'
+                              ? 'ts'
+                              : this.isESM
+                              ? 'js'
+                              : 'mjs'
+                          }`,
                         );
                         // 对接口返回数据进行解析处理，如果无法解析，则忽略该接口
                         try {
@@ -216,7 +237,9 @@ export class Generator {
                           removeInvalidProperty(parsedResBody);
                           interfaceInfo._parsedResBody = parsedResBody;
                         } catch (e) {
-                          consola.warn(`接口 ${interfaceInfo.path} 的 res_body 不是合法的 JSON 字符串，已忽略`);
+                          consola.warn(
+                            `接口 ${interfaceInfo.path} 的 res_body 不是合法的 JSON 字符串，已忽略`,
+                          );
                           return false;
                         }
                         // 根据 res_body 生成 hash，用来防止重新生成
@@ -234,7 +257,7 @@ export class Generator {
                           ? syntheticalConfig.preproccessInterface(
                               cloneDeepFast(interfaceInfo),
                               changeCase,
-                              syntheticalConfig
+                              syntheticalConfig,
                             )
                           : interfaceInfo;
                         return _interfaceInfo;
@@ -245,15 +268,15 @@ export class Generator {
                       ...interfaceList.map(interfaceInfo => ({
                         syntheticalConfig,
                         interfaceInfo,
-                      }))
+                      })),
                     );
-                  })
+                  }),
                 );
-              })
+              }),
             );
-          })
+          }),
         );
-      })
+      }),
     );
     this.total = this.interfaceList.length;
     return this.total;
@@ -305,7 +328,7 @@ export class Generator {
         // 	await this.tsc(outputFilePath);
         // 	await Promise.all([fs.remove(outputFilePath).catch(noop)]);
         // }
-      })
+      }),
     );
   }
 
@@ -335,7 +358,9 @@ export class Generator {
       }
       // 转义标题中的 /
       const escapedTitle = String(extendedInterfaceInfo.title).replace(/\//g, '\\/');
-      const description = hasLink ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})` : escapedTitle;
+      const description = hasLink
+        ? `[${escapedTitle}↗](${extendedInterfaceInfo._url})`
+        : escapedTitle;
       const summary: Array<
         | false
         | {
@@ -437,15 +462,20 @@ export class Generator {
       : path.join(__dirname, 'assets/mockSchema.ts');
     let schema = fs.readFileSync(schemaPath, 'utf8');
     if (mockResponseBodyType && !mockSchemaPath) {
-      schema = schema.replace('ResponseBodyType = any', `ResponseBodyType = ${mockResponseBodyType}`);
+      schema = schema.replace(
+        'ResponseBodyType = any',
+        `ResponseBodyType = ${mockResponseBodyType}`,
+      );
     }
     const [prettySchema] = await this.prettierFile(schema);
     // 剩余长度
     const surplusLength = maxLength - (prettySchema.length + 200);
-    const responseBodyList = this.interfaceList.map(i => ({
-      id: i?.interfaceInfo?._id,
-      res_body: i?.interfaceInfo?._parsedResBody,
-    }));
+    const responseBodyList = this.interfaceList
+      .map(i => ({
+        id: i?.interfaceInfo?._id,
+        res_body: i?.interfaceInfo?._parsedResBody,
+      }))
+      .filter(i => JSON.stringify(i.res_body).length < surplusLength - 20);
     const inputList: string[] = [];
     // 输入按长度分组
     while (responseBodyList.length > 0) {
@@ -456,7 +486,7 @@ export class Generator {
           input[item.id] = item.res_body;
           responseBodyList.splice(
             responseBodyList.findIndex(i => i.id === item.id),
-            1
+            1,
           );
         }
       });
@@ -477,14 +507,16 @@ export class Generator {
               isFunction(this.config?.processMockResult)
                 ? this.config?.processMockResult(mockResult[Number(id)], interfaceInfo)
                 : processMockResult(mockResult[Number(id)], interfaceInfo);
-              interfaceInfo._mockCode = mockResult[Number(id)] ? JSON.stringify(mockResult[Number(id)]) : '';
+              interfaceInfo._mockCode = mockResult[Number(id)]
+                ? JSON.stringify(mockResult[Number(id)])
+                : '';
               const code = this.generateCode(syntheticalConfig, interfaceInfo);
               outputFileList[interfaceInfo._outputFilePath] = {
                 syntheticalConfig,
                 content: [code],
               };
             }
-          })
+          }),
         );
         // 写入文件
         await this.write(outputFileList);
@@ -492,7 +524,7 @@ export class Generator {
         this.completed += Object.keys(mockResult).length;
         spinner.color = this.completed > 15 ? 'red' : 'yellow';
         spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
-      })
+      }),
     );
   }
 
@@ -533,10 +565,13 @@ export class Generator {
   /** 获取项目信息 */
   private async fetchProjectInfo(syntheticalConfig: SyntheticalConfig) {
     const projectInfo = await this.fetchProject(syntheticalConfig);
-    const projectCats = await this.fetchApi<CategoryList>(`${syntheticalConfig.serverUrl}/api/interface/getCatMenu`, {
-      token: syntheticalConfig.token!,
-      project_id: projectInfo._id,
-    });
+    const projectCats = await this.fetchApi<CategoryList>(
+      `${syntheticalConfig.serverUrl}/api/interface/getCatMenu`,
+      {
+        token: syntheticalConfig.token!,
+        project_id: projectInfo._id,
+      },
+    );
     return {
       ...projectInfo,
       cats: projectCats,
@@ -544,9 +579,13 @@ export class Generator {
   }
 
   /** 获取分类的接口列表 */
-  private async fetchInterfaceList({ serverUrl, token, id }: SyntheticalConfig): Promise<InterfaceList> {
+  private async fetchInterfaceList({
+    serverUrl,
+    token,
+    id,
+  }: SyntheticalConfig): Promise<InterfaceList> {
     const category = ((await this.fetchExport({ serverUrl, token })) || []).find(
-      cat => !isEmpty(cat) && !isEmpty(cat.list) && cat.list[0].catid === id
+      cat => !isEmpty(cat) && !isEmpty(cat.list) && cat.list[0].catid === id,
     );
 
     if (category) {
