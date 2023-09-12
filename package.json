@@ -1,6 +1,6 @@
 {
   "name": "yapi-ai-mock",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "使用 LLM，将 YAPI 文档生成为本地的 Mock 文件。",
   "keywords": [
     "yapi",
@@ -33,7 +33,7 @@
     "stub": "unbuild --stub",
     "dev": "chokidar \"src/**/*.ts\" -c \"pnpm build\"",
     "typecheck": "tsc --noEmit ./src/**/*.ts",
-    "fix": "eslint --fix",
+    "eslint:fix": "eslint --fix",
     "release": "release-it"
   },
   "exports": {
@@ -72,6 +72,7 @@
     "@babel/eslint-parser": "^7.22.10",
     "@qiuxc/eslint-config": "^0.0.9",
     "@qiuxc/prettier-config": "^0.1.0",
+    "@release-it/conventional-changelog": "^7.0.1",
     "@types/co-body": "^6.1.0",
     "@types/cors": "^2.8.14",
     "@types/crypto-js": "^4.1.1",
