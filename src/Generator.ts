@@ -462,7 +462,7 @@ export class Generator {
 
 			${mockConstruction.comment}
 			export default defineMock({
-				url: '${this.config?.mockPrefix || '/mock'}${mockConstruction.path}',
+				url: '${mockConstruction.path}',
 				method: '${mockConstruction.method}',
 				body: mockjs.mock(
 					${mockConstruction.mockCode || '{}'}

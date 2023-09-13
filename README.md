@@ -240,15 +240,6 @@ export interface ProjectConfig extends SharedConfig {
 
 配置改项后，生成的 mock 文件会放在该目录下。
 
-### `mockPrefix`
-
-- 类型：`string`
-- 默认值：`'/mock'`
-
-mock 接口前缀。
-
-生成的 mock 文件中，接口的路径会加上该前缀。
-
 ### `mockSchemaPath`
 
 - 类型：`${string}.ts`
@@ -452,7 +443,7 @@ export interface MockConstruction {
 /* hash: ${mockConstruction.hash} */
 ${mockConstruction.comment}
 export default defineMock({
-  url: '${config.mockPrefix || '/mock'}${mockConstruction.path}',
+  url: '${mockConstruction.path}',
   method: '${mockConstruction.method}',
   body: mockjs.mock(
     ${mockConstruction.mockCode || '{}'}

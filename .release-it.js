@@ -6,14 +6,20 @@ module.exports = {
   git: {
     commitMessage: '🐳chore: release v${version}',
   },
-  github: {
+  gitlab: {
     release: true,
   },
   plugins: {
     '@release-it/conventional-changelog': {
-      preset: 'angular',
       header: '# Changelog',
       infile: 'CHANGELOG.md',
+      preset: {
+        name: 'conventionalcommits',
+        types: [
+          { type: '✨ feat', section: 'Features' },
+          { type: '🐞 fix', section: 'Bug Fixes' },
+        ],
+      },
     },
   },
 };
