@@ -10,18 +10,18 @@ import type {
   NextHandleFunction,
   ResponseReq,
 } from './types';
-import { castArray, wait } from 'vtils';
+import { castArray, isFunction, wait } from 'vtils';
 import consola from 'consola';
 import { loadESModule, loadModule } from '@/utils';
-import { MOCK_TEMP_PATH } from '@/constant';
+import { INCLUDE, MOCK_TEMP_PATH, PREFIX } from '@/constant';
 import { resolve } from 'node:path';
 
 export async function mockServerMiddleware(
   httpServer: Server | null,
-  options: Required<MockServerPluginOptions>,
+  options: MockServerPluginOptions,
 ): Promise<NextHandleFunction> {
-  const prefix = castArray(options.prefix);
-  const include = castArray(options.include);
+  const prefix = castArray(options?.prefix || PREFIX);
+  const include = castArray(options?.include || INCLUDE);
   const includePaths = await fastGlob(include, { cwd: process.cwd() });
   const modules: Record<string, string> = Object.create(null);
   for (const filepath of includePaths) {
@@ -85,7 +85,7 @@ export async function mockServerMiddleware(
     const { query, pathname } = urlParse(req.url!, true);
 
     // 是否重写了生成的mock配置
-    const overwriteList = castArray(options.overwrite());
+    const overwriteList = castArray(isFunction(options?.overwrite) ? options.overwrite() : []);
     const overwriteMock = overwriteList.find(m => m.url === pathname);
 
     if (!modules[pathname!] && !overwriteMock) return next();

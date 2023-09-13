@@ -1,22 +1,14 @@
 import express from 'express';
 import consola from 'consola';
 import { mockServerMiddleware } from './mockMiddleware';
-import { INCLUDE, PORT, PREFIX } from '../constant';
+import { PORT } from '../constant';
 import { MockServerConfig } from '@/types';
-import { isFunction } from 'vtils';
 import cors from 'cors';
 const app = express();
 
 const mockServer = async (config: MockServerConfig = {}) => {
-  const include = config?.include || INCLUDE;
-  const prefix = config?.prefix || PREFIX;
   const port = config?.port || PORT;
-  const overwrite = isFunction(config?.overwrite) ? config.overwrite : () => [];
-  const middleware = await mockServerMiddleware(null, {
-    include,
-    prefix,
-    overwrite,
-  });
+  const middleware = await mockServerMiddleware(null, config);
 
   app.use(cors());
   app.use(middleware);

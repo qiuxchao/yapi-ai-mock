@@ -545,6 +545,15 @@ export interface Config {
   mockDir?: string;
 
   /**
+   * mock 接口前缀。默认为 `/mock`。
+   *
+   * 生成的 mock 文件中，接口的路径会加上该前缀。
+   *
+   * @default '/mock'
+   */
+  mockPrefix?: string;
+
+  /**
    * 给 LLM 的类型提示文件路径。默认为 `yapi-ai-mock/lib/assets/mockSchema.ts`。
    *
    * 可以是 `相对路径` 或 `绝对路径`。
@@ -684,7 +693,7 @@ export interface Config {
    * /* hash: ${mockConstruction.hash} *\/
    * ${mockConstruction.comment}
    * export default defineMock({
-   * 	url: '${mockConstruction.path}',
+   * 	url: '${config.mockPrefix || '/mock'}${mockConstruction.path}',
    * 	method: '${mockConstruction.method}',
    * 	body: mockjs.mock(
    * 		${mockConstruction.mockCode || '{}'}
