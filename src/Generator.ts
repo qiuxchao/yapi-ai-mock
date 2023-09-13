@@ -288,6 +288,31 @@ export class Generator {
     await this.genMockCode(spinner);
   }
 
+  /** 输出生成结果 */
+  public async result(): Promise<void> {
+    consola.success('代码生成完毕');
+    consola.success(`生成数量: ${this.completed}/${this.total}`);
+    if (this.completed !== this.total) {
+      consola.warn('以下接口未能成功生成: ');
+      this.interfaceList.forEach(({ interfaceInfo }) => {
+        console.log(
+          `- ${interfaceInfo.path}${
+            interfaceInfo._isResponseDataTooLarge
+              ? '（该接口响应数据过大，超出了 LLM 的 token 上限，请通过下面给出的第 2 种或第 3 种方法解决）'
+              : ''
+          } 🔗 ${interfaceInfo._url}`,
+        );
+      });
+      console.log();
+      consola.info(indent`可使用以下方法来处理未生成的接口：
+
+1. 调整 Prompt，然后重新生成。 🔗 \`https://github.com/qiuxchao/yapi-ai-mock#mockschemapath\`
+2. 在配置文件中的 mock 服务/插件/中间件配置中，通过 \`overwrite\` 方法来自定义以上接口。 🔗 \`https://github.com/qiuxchao/yapi-ai-mock#mockserver\`
+3. 如果接口响应数据超出了 LLM 的 tokens 上限，也可尝试在配置文件中来调整 tokens 上限来解决。🔗 \`https://github.com/qiuxchao/yapi-ai-mock#llmtokens\`
+      `);
+    }
+  }
+
   /** 写入文件 */
   private write(outputFileList: OutputFileList) {
     return Promise.all(
@@ -450,7 +475,7 @@ export class Generator {
 
   /** 生成 mock 代码 */
   private async genMockCode(spinner: Ora) {
-    const maxLength = Math.floor(Number(process.env['LLM_TOKENS'] || LLM_TOKENS) * 1.5);
+    const maxLength = Math.floor(Number(this.config.llmTokens || LLM_TOKENS) * 1.5);
 
     // 读取 mockSchema
     const { mockSchemaPath, mockResponseBodyType } = this.config;
@@ -475,7 +500,15 @@ export class Generator {
         id: i?.interfaceInfo?._id,
         res_body: i?.interfaceInfo?._parsedResBody,
       }))
-      .filter(i => JSON.stringify(i.res_body).length < surplusLength - 20);
+      .filter(i => {
+        const condition = JSON.stringify(i.res_body).length < surplusLength - 20;
+        if (!condition) {
+          const originInterface = this.interfaceList.find(item => item?.interfaceInfo?._id === i.id)
+            ?.interfaceInfo;
+          originInterface && (originInterface._isResponseDataTooLarge = true);
+        }
+        return condition;
+      });
     const inputList: string[] = [];
     // 输入按长度分组
     while (responseBodyList.length > 0) {
@@ -492,6 +525,7 @@ export class Generator {
       });
       Object.keys(input).length && inputList.push(JSON.stringify(input));
     }
+
     // 根据分组的输入，获取 mock 代码
     await Promise.all(
       inputList.map(async input => {
@@ -521,7 +555,11 @@ export class Generator {
         // 写入文件
         await this.write(outputFileList);
         // 更新进度
-        this.completed += Object.keys(mockResult).length;
+        const ids = Object.keys(mockResult);
+        this.completed += ids.length;
+        this.interfaceList = this.interfaceList.filter(
+          i => !ids.includes(String(i?.interfaceInfo?._id)),
+        );
         spinner.color = this.completed > 15 ? 'red' : 'yellow';
         spinner.text = `正在生成代码并写入文件... (已完成: ${this.completed}/${this.total})`;
       }),

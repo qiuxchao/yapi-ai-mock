@@ -37,7 +37,7 @@ const yam = async (config: Config) => {
       spinner2.start();
       await generator.generate(spinner2);
       spinner2.stop();
-      consola.success('代码生成完毕');
+      await generator.result();
     } else {
       consola.success('未发现需要生成的接口');
     }

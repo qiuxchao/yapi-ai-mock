@@ -197,6 +197,8 @@ export interface Interface {
   _parsedResBody: object;
   /** 接口响应数据 hash 值（自行实现） */
   _hash: string;
+  /** 是否响应数据过大无法生成（自行实现） */
+  _isResponseDataTooLarge: boolean;
   /** 接口名称 */
   title: string;
   /** 状态 */
@@ -522,7 +524,7 @@ export interface Config {
    *
    * 可以是 `相对路径` 或 `绝对路径`。
    *
-   * 可以在其中配置 `OPENAI_API_KEY` 等环境变量。
+   * 可以在其中配置 `OPENAI_API_KEY` 等[环境变量](https://github.com/qiuxchao/yapi-ai-mock#%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F)。
    *
    * @default '.env'
    */
@@ -591,6 +593,14 @@ export interface Config {
    * 'any'
    */
   mockResponseBodyType?: string;
+
+  /**
+   * LLM 支持的 Tokens 数量，默认为 `4096`。
+   *
+   * @default
+   * 4096
+   */
+  llmTokens?: number;
 
   /**
    * 自定义 LLM 模型。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）

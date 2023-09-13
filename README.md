@@ -288,6 +288,13 @@ mock 接口前缀。
 }`;
 ```
 
+### llmTokens
+
+- 类型：`number`
+- 默认值： `4096`
+
+LLM 支持的 Tokens 数量，默认为 `4096`。
+
 ### `createLanguageModel`
 
 - 类型：
@@ -519,7 +526,6 @@ function processMockResult: (mockResult: any, interfaceInfo: Interface): void;
 | `OPENAI_ENDPOINT`       | OpenAI API 地址，用于调用 OpenAI 的 ChatGPT 模型。默认为 `https://api.openai.com/v1/chat/completions` |
 | `OPENAI_MODEL  `        | OpenAI 模型名称（例如 `gpt-3.5-turbo` 或 `gpt-4`）                                                    |
 | `OPENAI_ORGANIZATION  ` | OpenAI 组织 - 可选，默认为 `''`                                                                       |
-| `LLM_TOKENS`            | LLM 支持的 Tokens 数量，默认为 `4096`                                                                 |
 
 如果在环境变量中配置了 `OPENAI_API_KEY`，则 [`createLanguageModel`](#createlanguagemodel) 配置项无效。
 
