@@ -1,6 +1,6 @@
 import { ParsedPath } from 'path';
 import { OmitStrict, LiteralUnion, AsyncOrSync } from 'vtils/types';
-import { Error, Success, TypeChatLanguageModel } from 'typechat';
+import { Error, Success, TypeChatLanguageModel } from './chat/typechat';
 import { AxiosStatic } from 'axios';
 import { MockServerPluginOptions } from './mock/types';
 export interface ChangeCase {
@@ -587,6 +587,8 @@ export interface Config {
 
   /**
    * LLM 支持的 Tokens 数量，默认为 `4096`。
+   *
+   * 可以通过调整此配置项来控制每次向 LLM 发送的接口数量，但最大不能超过 LLM 支持的最大 Tokens 数。
    *
    * @default
    * 4096

@@ -16,8 +16,8 @@ module.exports = {
       preset: {
         name: 'conventionalcommits',
         types: [
-          { type: '✨ feat', section: 'Features' },
-          { type: '🐞 fix', section: 'Bug Fixes' },
+          { type: 'feat', section: 'Features' },
+          { type: 'fix', section: 'Bug Fixes' },
         ],
       },
     },
