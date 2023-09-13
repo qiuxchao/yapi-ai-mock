@@ -65,11 +65,11 @@
     "ora": "^3.4.0",
     "path-to-regexp": "^6.2.1",
     "prettier": "^3.0.0",
-    "typechat": "^0.0.10",
     "vtils": "^4.85.3",
     "yargs": "^16.2.0"
   },
   "devDependencies": {
+    "typechat": "^0.0.10",
     "@babel/eslint-parser": "^7.22.10",
     "@qiuxc/eslint-config": "^0.0.9",
     "@qiuxc/prettier-config": "^0.1.0",
