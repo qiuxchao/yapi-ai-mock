@@ -69,7 +69,6 @@
     "yargs": "^16.2.0"
   },
   "devDependencies": {
-    "typechat": "^0.0.10",
     "@babel/eslint-parser": "^7.22.10",
     "@qiuxc/eslint-config": "^0.0.9",
     "@qiuxc/prettier-config": "^0.1.0",
@@ -88,6 +87,7 @@
     "chokidar-cli": "^3.0.0",
     "eslint": "^8.47.0",
     "release-it": "^16.1.5",
+    "typechat": "^0.0.10",
     "typescript": "^5.1.6",
     "unbuild": "^1.2.1"
   },

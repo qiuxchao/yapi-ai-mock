@@ -501,7 +501,7 @@ export class Generator {
         res_body: i?.interfaceInfo?._parsedResBody,
       }))
       .filter(i => {
-        const condition = JSON.stringify(i.res_body).length < surplusLength - 20;
+        const condition = JSON.stringify({ [i.id]: i.res_body }).length < surplusLength;
         if (!condition) {
           const originInterface = this.interfaceList.find(item => item?.interfaceInfo?._id === i.id)
             ?.interfaceInfo;

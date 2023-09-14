@@ -38,13 +38,13 @@
 
 ```bash
 # npm
-npm i yapi-ai-mock -D
+npm i yapi-ai-mock mockjs @types/mockjs -D
 
 # yarn
-yarn add yapi-ai-mock -D
+yarn add yapi-ai-mock mockjs @types/mockjs -D
 
 # pnpm
-pnpm add yapi-ai-mock -D
+pnpm add yapi-ai-mock mockjs @types/mockjs -D
 ```
 
 ## 使用
@@ -295,6 +295,8 @@ mock 接口前缀。
 
 LLM 支持的 Tokens 数量，默认为 `4096`。
 
+可以通过调整此配置项来控制每次向 LLM 发送的数据量，但不能超过 LLM 支持的最大 Tokens 数。
+
 ### `createLanguageModel`
 
 - 类型：
@@ -317,7 +319,7 @@ function createLanguageModel: (
   ): TypeChatLanguageModel;
 ```
 
-自定义 LLM 模型。如果在[环境变量](#环境变量)中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
+自定义 LLM。如果在[环境变量](#环境变量)中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
 
 示例：
 
@@ -579,7 +581,7 @@ const { webpackMockMiddleware } = require('yapi-ai-mock');
 module.exports = {
   devServer: {
     onBeforeSetupMiddleware: async devServer => {
-      mockMiddleware = await webpackMockMiddleware(devServer.app);
+      const mockMiddleware = await webpackMockMiddleware(devServer.app);
       devServer.app.use(mockMiddleware);
     },
   },

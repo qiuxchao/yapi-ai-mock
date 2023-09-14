@@ -105,13 +105,15 @@ export default defineConfig({
   /**
    * LLM 支持的 Tokens 数量，默认为 `4096`。
    *
+   * 可以通过调整此配置项来控制每次向 LLM 发送的数据量，但不能超过 LLM 支持的最大 Tokens 数。
+   *
    * @default
    * 4096
    */
   llmTokens: 4096,
 
   /**
-   * 自定义 LLM 模型。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
+   * 自定义 LLM。如果在环境变量中设置了 `OPENAI_API_KEY`，则此配置项无效。（因为会直接使用 openai ChatGPT 的模型）
    *
    *
    * @param axios axios 方法
