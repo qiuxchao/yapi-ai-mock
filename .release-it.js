@@ -6,7 +6,7 @@ module.exports = {
   git: {
     commitMessage: '🐳chore: release v${version}',
   },
-  gitlab: {
+  github: {
     release: true,
   },
   plugins: {
