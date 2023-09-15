@@ -522,12 +522,12 @@ function processMockResult: (mockResult: any, interfaceInfo: Interface): void;
 
 在 [`envPath`](#envpath) 配置项指定的环境变量文件中，可以配置以下环境变量：
 
-| 变量名                  | 说明                                                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `OPENAI_API_KEY`        | OpenAI API Key，用于调用 OpenAI 的 ChatGPT 模型。                                                     |
-| `OPENAI_ENDPOINT`       | OpenAI API 地址，用于调用 OpenAI 的 ChatGPT 模型。默认为 `https://api.openai.com/v1/chat/completions` |
-| `OPENAI_MODEL  `        | OpenAI 模型名称（例如 `gpt-3.5-turbo` 或 `gpt-4`）                                                    |
-| `OPENAI_ORGANIZATION  ` | OpenAI 组织 - 可选，默认为 `''`                                                                       |
+| 变量名                | 说明                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------- |
+| `OPENAI_API_KEY`      | OpenAI API Key，用于调用 OpenAI 的 ChatGPT 模型。                                                     |
+| `OPENAI_ENDPOINT`     | OpenAI API 地址，用于调用 OpenAI 的 ChatGPT 模型。默认为 `https://api.openai.com/v1/chat/completions` |
+| `OPENAI_MODEL`        | OpenAI 模型名称（例如 `gpt-3.5-turbo` 或 `gpt-4`），配置了 `OPENAI_API_KEY` 时必须配置此变量          |
+| `OPENAI_ORGANIZATION` | OpenAI 组织 - 可选，默认为 `''`                                                                       |
 
 如果在环境变量中配置了 `OPENAI_API_KEY`，则 [`createLanguageModel`](#createlanguagemodel) 配置项无效。
 
