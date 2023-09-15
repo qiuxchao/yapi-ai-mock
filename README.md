@@ -267,7 +267,7 @@ mock 接口前缀。
 
 给 LLM 的期望的 mock 结果的类型定义。
 
-如果配置了 [`mockSchemaPath`](#mockschemapath)，则此配置项无效。
+如果配置了 [`mockSchemaPath`](#mockschemapath)，则此配置项无效（因为可以在 `mockSchemaPath` 指向的文件中配置 `ResponseBodyType` 类型）。
 
 此配置项会与 `yapi-ai-mock/lib/assets/mockSchema.ts` 进行合并，然后将合并后的结果传输给 LLM。
 
@@ -417,7 +417,7 @@ mock 服务配置。
 
 mock 服务是一个 http 服务，用于拦截请求并返回 mock 数据。
 
-当你的项目不是 webpack 或 vite 等工具构建的 SPA 项目时，应当使用 mock 服务。
+当你的项目不是 webpack 或 vite 构建的时，应当使用 mock 服务。
 
 使用 `npx yam serve` 命令启动 mock 服务。
 

@@ -145,4 +145,27 @@ export default defineConfig({
   // 		}
   // 	},
   // }),
+
+  /**
+   * 自定义的对 LLM 返回的 mock 结果进行处理，使其符合预期。
+   *
+   * 如果不设置，则直接使用 LLM 返回的 mock 结果。
+   *
+   * @param mockResult LLM 返回的 mock 结果
+   * @param interfaceInfo 接口信息
+   *
+   * @example
+   *
+   * ```ts
+   * (mockResult, interfaceInfo) => {
+   * 	if (mockResult?.hasOwnProperty('code')) {
+   * 		mockResult.code = 200;
+   * 	}
+   * 	if (mockResult?.hasOwnProperty('message')) {
+   * 		mockResult.message = 'success';
+   * 	}
+   * }
+   * ```
+   */
+  // processMockResult: (mockResult, interfaceInfo) => {},
 });

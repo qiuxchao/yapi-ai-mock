@@ -123,16 +123,6 @@ export const removeInvalidProperty = (obj: Record<string, any>) => {
   return obj;
 };
 
-/** 处理 mock 结果 */
-export const processMockResult = (mockResult: any, interfaceInfo: Interface) => {
-  if (mockResult?.hasOwnProperty('code')) {
-    mockResult.code = 200;
-  }
-  if (mockResult?.hasOwnProperty('message')) {
-    mockResult.message = 'success';
-  }
-};
-
 /** 转换 ts | js 文件 */
 export const transformWithEsbuild = async (code: string, filename: string) => {
   let loader: Loader = 'js';

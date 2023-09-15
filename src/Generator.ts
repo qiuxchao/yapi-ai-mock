@@ -31,7 +31,6 @@ import {
   httpGet,
   throwError,
   removeInvalidProperty,
-  processMockResult,
   transformWithEsbuild,
 } from '@/utils';
 import * as fs from 'fs-extra';
@@ -538,9 +537,8 @@ export class Generator {
               this.interfaceList.find(i => i?.interfaceInfo?._id === Number(id)) || {};
             if (interfaceInfo && syntheticalConfig) {
               // mock 结果处理
-              isFunction(this.config?.processMockResult)
-                ? this.config?.processMockResult(mockResult[Number(id)], interfaceInfo)
-                : processMockResult(mockResult[Number(id)], interfaceInfo);
+              isFunction(this.config?.processMockResult) &&
+                this.config?.processMockResult(mockResult[Number(id)], interfaceInfo);
               interfaceInfo._mockCode = mockResult[Number(id)]
                 ? JSON.stringify(mockResult[Number(id)])
                 : '';
