@@ -130,23 +130,20 @@ export class Generator {
     this.config = omit(config, ['yapi']);
   }
 
-  /** 前置方法，统一配置项 */
+  /** 前置方法，处理配置项 */
   public async prepare(): Promise<void> {
     // 读取宿主项目的 package.json
     this.packageJson = await fs.readJSON(path.resolve(this.options.cwd, 'package.json'));
     this.isESM = this.packageJson.type === 'module';
     // 处理 yapi 服务配置
-    this.serverConfig = await Promise.all(
-      // config 可能是对象或数组，统一为数组
-      this.serverConfig.map(async item => {
-        const serverUrl = item.serverUrl?.replace(/\/+$/, '');
-        if (!serverUrl) {
-          throwError('未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段配置');
-        }
-        item.serverUrl = serverUrl;
-        return item;
-      }),
-    );
+    this.serverConfig = this.serverConfig.map(item => {
+      const serverUrl = item.serverUrl?.replace(/\/+$/, '');
+      if (!serverUrl) {
+        throwError('未配置 yapi 服务地址，请通过配置文件中的 serverUrl 字段配置');
+      }
+      item.serverUrl = serverUrl;
+      return item;
+    });
   }
 
   /** 拉取并解析接口数据 */
